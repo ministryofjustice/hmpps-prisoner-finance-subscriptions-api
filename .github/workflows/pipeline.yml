@@ -88,7 +88,7 @@ jobs:
       slack_notification: 'true'
   dev_smoke_tests:
    name: Dev smoke test
-   uses: .github/workflows/smoke-test-dev.yml
+   uses: ./.github/workflows/smoke-test-dev.yml
    secrets: inherit
    needs:
     - deploy_dev
