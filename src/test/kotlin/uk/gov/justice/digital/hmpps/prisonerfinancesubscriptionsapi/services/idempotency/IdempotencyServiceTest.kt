@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.idempotency
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -64,8 +64,8 @@ class IdempotencyServiceTest {
 
       val idempotencyEntityOrNull = idempotencyService.findIdempotencyKeyOrNull(idempotencyKey)
 
-      Assertions.assertThat(idempotencyEntityOrNull!!.idempotencyKey).isEqualTo(idempotencyKey)
-      Assertions.assertThat(idempotencyEntityOrNull.subscription).isEqualTo(subscription)
+      assertThat(idempotencyEntityOrNull!!.idempotencyKey).isEqualTo(idempotencyKey)
+      assertThat(idempotencyEntityOrNull.subscription).isEqualTo(subscription)
     }
   }
 }
