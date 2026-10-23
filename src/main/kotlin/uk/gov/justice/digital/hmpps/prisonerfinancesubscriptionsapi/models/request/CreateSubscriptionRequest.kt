@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -30,4 +31,19 @@ class CreateSubscriptionRequest(
   val prisonNumber: String,
   @field:Schema(description = "The sub-account that the subscription payment is debited from", example = "CASH", required = true)
   val subAccountRef: String,
-)
+) {
+  fun toEntity(): SubscriptionEntity = SubscriptionEntity(
+    legacyPaymentProfileId = legacyPaymentProfileId,
+    amount = amount,
+    dayOfPayment = dayOfPayment,
+    startDate = startDate,
+    endDate = endDate,
+    subscriptionType = subscriptionType,
+    reference = reference,
+    createdBy = createdBy,
+    createdAt = createdAt,
+    prisonId = prisonId,
+    prisonNumber = prisonNumber,
+    subAccountRef = subAccountRef,
+  )
+}

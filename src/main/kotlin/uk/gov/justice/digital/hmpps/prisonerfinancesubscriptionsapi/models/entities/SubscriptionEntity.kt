@@ -63,5 +63,4 @@ class SubscriptionEntity(
 
   @Column(name = "sub_account_ref", nullable = false, unique = false)
   val subAccountRef: String,
-
 )
