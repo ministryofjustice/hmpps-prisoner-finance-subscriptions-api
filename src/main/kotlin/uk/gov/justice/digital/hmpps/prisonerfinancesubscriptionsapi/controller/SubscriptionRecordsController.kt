@@ -72,7 +72,7 @@ class SubscriptionRecordsController(
       name = "Idempotency-Key",
       `in` = ParameterIn.HEADER,
       required = true,
-      description = "An Idempotency Key to ensure that transactions are not repeated",
+      description = "An Idempotency Key to ensure that subscription creation requests are not repeated",
     )
     @RequestHeader(
       "Idempotency-Key",
