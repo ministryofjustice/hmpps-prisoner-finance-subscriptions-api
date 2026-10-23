@@ -81,13 +81,11 @@ class SubscriptionRecordsController(
     idempotencyKey: UUID,
     @Valid @RequestBody createSubscriptionRequest: CreateSubscriptionRequest,
   ): ResponseEntity<SubscriptionResponse> {
-
-   idempotencyService.findIdempotencyKeyOrNull(idempotencyKey)?.let{
+    idempotencyService.findIdempotencyKeyOrNull(idempotencyKey)?.let {
       return ResponseEntity.status(201).body(SubscriptionResponse.fromEntity(it.subscription))
     }
 
-    val subscriptionResponse =  recordService.createSubscription(createSubscriptionRequest, idempotencyKey)
-
+    val subscriptionResponse = recordService.createSubscription(createSubscriptionRequest, idempotencyKey)
 
     return ResponseEntity.status(201).body(subscriptionResponse)
   }

@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
-import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.HttpMediaTypeNotSupportedException
 import org.springframework.web.bind.MissingRequestHeaderException
@@ -96,8 +95,6 @@ class PrisonerFinanceSubscriptionsApiExceptionHandler {
         developerMessage = e.message,
       ),
     ).also { log.error("Unexpected exception", e) }
-
-
 
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
