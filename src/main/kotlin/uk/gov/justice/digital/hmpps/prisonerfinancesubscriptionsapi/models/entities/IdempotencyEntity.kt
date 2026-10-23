@@ -6,11 +6,13 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.Immutable
 import org.springframework.data.domain.Persistable
 import java.util.UUID
 
 @Entity
 @Table(name = "idempotency_keys")
+@Immutable
 class IdempotencyEntity(
 
   @Id
