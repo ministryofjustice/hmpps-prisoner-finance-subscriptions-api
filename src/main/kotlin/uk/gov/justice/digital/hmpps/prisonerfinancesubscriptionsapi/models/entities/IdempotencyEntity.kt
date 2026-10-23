@@ -27,4 +27,6 @@ class IdempotencyEntity(
   // Because idempotency records are typically write-once and never updated,
   // When this is hardcoded to true. This forces an INSERT every time.
   override fun isNew(): Boolean = true
+
+
 }

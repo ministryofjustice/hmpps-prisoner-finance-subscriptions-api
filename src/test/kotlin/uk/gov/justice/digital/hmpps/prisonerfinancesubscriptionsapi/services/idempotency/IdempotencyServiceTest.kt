@@ -26,7 +26,7 @@ class IdempotencyServiceTest {
   lateinit var idempotencyService: IdempotencyService
 
   @Nested
-  inner class ReaddIdempotencyKey {
+  inner class FindIdempotencyKeyOrNull {
 
     @Test
     fun `Should return null if no idempotency key exists`() {
@@ -34,7 +34,7 @@ class IdempotencyServiceTest {
 
       whenever(idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)).thenReturn(null)
 
-      val idempotencyEntityOrNull = idempotencyService.readIdempotencyKey(idempotencyKey)
+      val idempotencyEntityOrNull = idempotencyService.findIdempotencyKeyOrNull(idempotencyKey)
 
       assert(idempotencyEntityOrNull == null)
     }
@@ -62,7 +62,7 @@ class IdempotencyServiceTest {
 
       whenever(idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)).thenReturn(idempotencyEntity)
 
-      val idempotencyEntityOrNull = idempotencyService.readIdempotencyKey(idempotencyKey)
+      val idempotencyEntityOrNull = idempotencyService.findIdempotencyKeyOrNull(idempotencyKey)
 
       Assertions.assertThat(idempotencyEntityOrNull!!.idempotencyKey).isEqualTo(idempotencyKey)
       Assertions.assertThat(idempotencyEntityOrNull.subscription).isEqualTo(subscription)

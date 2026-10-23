@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension.Companion.generalLedgerApi
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension
@@ -19,7 +20,7 @@ import java.util.UUID
 @ExtendWith(HmppsAuthApiExtension::class, GeneralLedgerApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(ContainersConfig::class)
+@Import(ContainersConfig::class, IntegrationTestHelpers::class)
 @AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
 
@@ -28,6 +29,9 @@ abstract class IntegrationTestBase {
 
   @Autowired
   protected lateinit var jwtAuthHelper: JwtAuthorisationHelper
+
+  @Autowired
+  protected lateinit var integrationTestHelpers: IntegrationTestHelpers
 
   internal fun setAuthorisation(
     username: String? = "AUTH_ADM",

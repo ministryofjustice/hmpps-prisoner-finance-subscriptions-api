@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -18,6 +19,11 @@ import java.time.LocalDate
 import java.util.UUID
 
 class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
+
+  @BeforeEach
+  fun setup() {
+    integrationTestHelpers.clearDatabase()
+  }
 
   val mapper = ObjectMapper()
 
@@ -38,6 +44,35 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       prisonNumber = "AD12345",
       subAccountRef = "CASH",
     )
+
+    @Test
+    fun `should return 201 and created record`() {
+      val idempotencyKey = UUID.randomUUID()
+      val response = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(response.id).isNotNull
+      assertThat(response.legacyPaymentProfileId).isEqualTo(123456789)
+      assertThat(response.amount).isEqualTo(50)
+      assertThat(response.dayOfPayment).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(response.startDate).isEqualTo(LocalDate.now())
+      assertThat(response.endDate).isNull()
+      assertThat(response.subscriptionType).isEqualTo("TELE")
+      assertThat(response.reference).isEqualTo("REF")
+      assertThat(response.createdAt).isEqualTo(createSubscriptionRequest.createdAt)
+      assertThat(response.createdBy).isEqualTo(createSubscriptionRequest.createdBy)
+      assertThat(response.prisonId).isEqualTo(createSubscriptionRequest.prisonId)
+      assertThat(response.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
+      assertThat(response.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
+    }
 
     @Test
     fun `should return 201 and the existing record when using the same idempotency key`() {
@@ -69,35 +104,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 201 and created record`() {
-      val response = webTestClient.post().uri("/subscriptions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .bodyValue(createSubscriptionRequest)
-        .exchange()
-        .expectStatus()
-        .isCreated
-        .expectBody<SubscriptionResponse>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(response.id).isNotNull
-      assertThat(response.legacyPaymentProfileId).isEqualTo(123456789)
-      assertThat(response.amount).isEqualTo(50)
-      assertThat(response.dayOfPayment).isEqualTo(DayOfWeek.MONDAY)
-      assertThat(response.startDate).isEqualTo(LocalDate.now())
-      assertThat(response.endDate).isNull()
-      assertThat(response.subscriptionType).isEqualTo("TELE")
-      assertThat(response.reference).isEqualTo("REF")
-      assertThat(response.createdAt).isEqualTo(createSubscriptionRequest.createdAt)
-      assertThat(response.createdBy).isEqualTo(createSubscriptionRequest.createdBy)
-      assertThat(response.prisonId).isEqualTo(createSubscriptionRequest.prisonId)
-      assertThat(response.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
-      assertThat(response.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
-    }
-
-    @Test
-    fun `should return 400 if given a malformed request`() {
+    fun `should return 400 if given a malformed request body`() {
       // Incorrect data types on keys
       webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -151,11 +158,41 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .responseBody!!
     }
 
+    @Test
+    fun `should return 400 if given a malformed idempotency key`() {
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers { it.set("Idempotency-Key", "NOT_A_UUID") }
+        .header("Content-Type", "application/json")
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `should return 400 if missing idempotency key`() {
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .header("Content-Type", "application/json")
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
     @ParameterizedTest
     @CsvSource("WRONG_ROLE,ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO")
     fun `should return 403 forbidden when user does not have the correct role`(role: String) {
       webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(role)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()

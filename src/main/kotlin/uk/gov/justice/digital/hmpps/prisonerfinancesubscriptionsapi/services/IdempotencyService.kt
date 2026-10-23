@@ -9,5 +9,5 @@ import java.util.UUID
 class IdempotencyService(
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) {
-  fun readIdempotencyKey(idempotencyKey: UUID): IdempotencyEntity? = idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)
+  fun findIdempotencyKeyOrNull(idempotencyKey: UUID): IdempotencyEntity? = idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)
 }
