@@ -20,6 +20,17 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestControllerAdvice
 class PrisonerFinanceSubscriptionsApiExceptionHandler {
 
+  @ExceptionHandler(HttpMediaTypeNotSupportedException::class)
+  fun handleHttpMessageNotReadableException(e: HttpMediaTypeNotSupportedException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "Validation failure: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Validation exception: {}", e.message) }
+
   @ExceptionHandler(MissingRequestHeaderException::class)
   fun handleMissingRequestHeaderException(e: MissingRequestHeaderException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(BAD_REQUEST)
@@ -86,27 +97,7 @@ class PrisonerFinanceSubscriptionsApiExceptionHandler {
       ),
     ).also { log.error("Unexpected exception", e) }
 
-  @ExceptionHandler(HttpMessageNotReadableException::class)
-  fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> = ResponseEntity
-    .status(BAD_REQUEST)
-    .body(
-      ErrorResponse(
-        status = BAD_REQUEST,
-        userMessage = "Validation failure: ${e.message}",
-        developerMessage = e.message,
-      ),
-    ).also { log.info("Validation exception: {}", e.message) }
 
-  @ExceptionHandler(HttpMediaTypeNotSupportedException::class)
-  fun handleHttpMessageNotReadableException(e: HttpMediaTypeNotSupportedException): ResponseEntity<ErrorResponse> = ResponseEntity
-    .status(BAD_REQUEST)
-    .body(
-      ErrorResponse(
-        status = BAD_REQUEST,
-        userMessage = "Validation failure: ${e.message}",
-        developerMessage = e.message,
-      ),
-    ).also { log.info("Validation exception: {}", e.message) }
 
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
