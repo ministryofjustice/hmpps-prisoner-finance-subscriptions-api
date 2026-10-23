@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -42,7 +43,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       createdAt = Instant.now(),
       prisonId = "LEI",
       prisonNumber = "AD12345",
-      subAccountRef = "CASH",
+      subAccountRef = SubAccountRef.CASH,
     )
 
     @Test

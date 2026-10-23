@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import java.time.DayOfWeek
 import java.time.Instant
@@ -33,11 +34,11 @@ class SubscriptionResponse(
   @field:Schema(description = "The prison number of the offender that has the subscription", example = "AE12345")
   val prisonNumber: String,
   @field:Schema(description = "The sub-account that the subscription payment is debited from", example = "CASH")
-  val subAccountRef: String,
+  val subAccountRef: SubAccountRef,
 ) {
   companion object {
     fun fromEntity(subscriptionEntity: SubscriptionEntity): SubscriptionResponse = SubscriptionResponse(
-      id = subscriptionEntity.id,
+      id = subscriptionEntity.subscriptionId,
       legacyPaymentProfileId = subscriptionEntity.legacyPaymentProfileId,
       amount = subscriptionEntity.amount,
       dayOfPayment = subscriptionEntity.dayOfPayment,

@@ -9,6 +9,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.IdempotencyService
@@ -43,7 +44,7 @@ class IdempotencyServiceTest {
     fun `Should return idempotency entity if it exists`() {
       val idempotencyKey = UUID.randomUUID()
       val subscription = SubscriptionEntity(
-        id = UUID.randomUUID(),
+        subscriptionId = UUID.randomUUID(),
         legacyPaymentProfileId = 123456,
         amount = 50L,
         dayOfPayment = DayOfWeek.MONDAY,
@@ -55,7 +56,7 @@ class IdempotencyServiceTest {
         createdAt = Instant.now(),
         prisonId = "LEI",
         prisonNumber = "AD12345",
-        subAccountRef = "CASH",
+        subAccountRef = SubAccountRef.CASH,
       )
 
       val idempotencyEntity = IdempotencyEntity(idempotencyKey, subscription)

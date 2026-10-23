@@ -16,7 +16,7 @@ import java.util.UUID
 class IdempotencyEntity(
 
   @Id
-  @Column(name = "id", nullable = false, unique = true)
+  @Column(name = "idempotency_key_id", nullable = false, unique = true)
   val idempotencyKey: UUID,
 
   @OneToOne(optional = false, fetch = jakarta.persistence.FetchType.EAGER)

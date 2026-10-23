@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import java.time.DayOfWeek
 import java.time.Instant
@@ -17,9 +18,9 @@ class CreateSubscriptionRequest(
   val startDate: LocalDate,
   @field:Schema(description = "The end date of the subscription", example = "2026-13-04", required = false)
   val endDate: LocalDate? = null,
-  @field:Schema(description = "The transaction type on the payment profile", example = "TELE", required = true)
+  @field:Schema(description = "The transaction type for the payments", example = "TELE", required = true)
   val subscriptionType: String,
-  @field:Schema(description = "The reference on the payment profile", example = "REF", required = false)
+  @field:Schema(description = "Reference note or external Identifier associated with the subscription", example = "sky tv", required = false)
   val reference: String? = null,
   @field:Schema(description = "The user that created the subscription", example = "TEST_USER", required = true)
   val createdBy: String,
@@ -30,7 +31,7 @@ class CreateSubscriptionRequest(
   @field:Schema(description = "The prison number of the offender that has the subscription", example = "AE12345", required = true)
   val prisonNumber: String,
   @field:Schema(description = "The sub-account that the subscription payment is debited from", example = "CASH", required = true)
-  val subAccountRef: String,
+  val subAccountRef: SubAccountRef,
 ) {
   fun toEntity(): SubscriptionEntity = SubscriptionEntity(
     legacyPaymentProfileId = legacyPaymentProfileId,

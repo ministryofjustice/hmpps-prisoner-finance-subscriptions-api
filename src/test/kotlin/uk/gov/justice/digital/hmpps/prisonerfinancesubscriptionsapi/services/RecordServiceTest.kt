@@ -14,6 +14,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
@@ -51,7 +52,7 @@ class RecordServiceTest {
       createdAt = Instant.now(),
       prisonId = "LEI",
       prisonNumber = "AD12345",
-      subAccountRef = "CASH",
+      subAccountRef = SubAccountRef.CASH,
     )
 
     val idempotency = IdempotencyEntity(UUID.randomUUID(), createSubscriptionRequest.toEntity())

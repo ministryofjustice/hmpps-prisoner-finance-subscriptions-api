@@ -27,7 +27,8 @@ class SubscriptionEntity(
 
   @Id
   @Immutable
-  val id: UUID = UUID.randomUUID(),
+  @Column(name = "subscription_id", nullable = false, unique = true)
+  val subscriptionId: UUID = UUID.randomUUID(),
 
   @Immutable
   @Column(name = "legacy_payment_profile_id", nullable = false, unique = true)
@@ -74,6 +75,13 @@ class SubscriptionEntity(
   val prisonNumber: String,
 
   @Immutable
+  @Enumerated(EnumType.STRING)
   @Column(name = "sub_account_ref", nullable = false, unique = false)
-  val subAccountRef: String,
+  val subAccountRef: SubAccountRef,
 )
+
+enum class SubAccountRef {
+  CASH,
+  SPENDS,
+  SAVINGS,
+}
