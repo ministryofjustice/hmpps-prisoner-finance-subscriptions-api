@@ -8,8 +8,8 @@ import java.time.Instant
 import java.time.LocalDate
 
 class CreateSubscriptionRequest(
-  @field:Schema(description = "The payment profile ID", example = "123456789", required = true)
-  val legacyPaymentProfileId: Long,
+  @field:Schema(description = "The legacy payment profile ID", example = "123456789", required = false)
+  val legacyPaymentProfileId: Long? = null,
   @field:Schema(description = "The amount paid weekly in pence", example = "50", required = true)
   val amount: Long,
   @field:Schema(description = "The day the payment is made weekly", example = "MONDAY", required = true)

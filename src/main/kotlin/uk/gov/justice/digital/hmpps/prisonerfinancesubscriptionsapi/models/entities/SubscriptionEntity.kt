@@ -31,8 +31,8 @@ class SubscriptionEntity(
   val subscriptionId: UUID = UUID.randomUUID(),
 
   @Immutable
-  @Column(name = "legacy_payment_profile_id", nullable = false, unique = true)
-  val legacyPaymentProfileId: Long,
+  @Column(name = "legacy_payment_profile_id", nullable = true, unique = true)
+  val legacyPaymentProfileId: Long?,
 
   @Immutable
   @Column(name = "amount", nullable = false, unique = false)

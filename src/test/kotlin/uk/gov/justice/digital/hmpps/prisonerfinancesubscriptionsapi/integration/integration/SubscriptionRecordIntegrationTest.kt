@@ -105,6 +105,41 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 201 when legacy payment profile id is not included`() {
+
+      val createSubscriptionRequestWithoutLegacyPaymentProfileId = CreateSubscriptionRequest(
+        legacyPaymentProfileId = null,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "AD12345",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val idempotencyKey = UUID.randomUUID()
+      val response = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequestWithoutLegacyPaymentProfileId)
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(response.id).isNotNull
+      assertThat(response.legacyPaymentProfileId).isNull()
+
+    }
+
+    @Test
     fun `should return 400 if given a malformed request body`() {
       // Incorrect data types on keys
       webTestClient.post().uri("/subscriptions")
