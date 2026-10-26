@@ -9,16 +9,18 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension.Companion.generalLedgerApi
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
+import java.util.UUID
 
 @ExtendWith(HmppsAuthApiExtension::class, GeneralLedgerApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(ContainersConfig::class)
+@Import(ContainersConfig::class, IntegrationTestHelpers::class)
 @AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
 
@@ -27,6 +29,9 @@ abstract class IntegrationTestBase {
 
   @Autowired
   protected lateinit var jwtAuthHelper: JwtAuthorisationHelper
+
+  @Autowired
+  protected lateinit var integrationTestHelpers: IntegrationTestHelpers
 
   internal fun setAuthorisation(
     username: String? = "AUTH_ADM",
@@ -37,5 +42,11 @@ abstract class IntegrationTestBase {
   protected fun stubPingWithResponse(status: Int, statusGeneralLedger: Int) {
     hmppsAuth.stubHealthPing(status)
     generalLedgerApi.stubHealthPing(statusGeneralLedger)
+  }
+
+  companion object {
+    fun setIdempotencyKey(
+      key: UUID,
+    ): (HttpHeaders) -> Unit = { it.set("Idempotency-Key", key.toString()) }
   }
 }

@@ -48,3 +48,46 @@ tasks {
     compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
   }
 }
+
+tasks {
+
+  named<Test>("test") {
+    enabled = true
+  }
+
+  withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
+  }
+
+  register<Test>("unitTest") {
+    group = "verification"
+    description = "Runs unit tests excluding integration tests"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["main"].output + configurations["testRuntimeClasspath"] + sourceSets["test"].output
+    filter {
+      excludeTestsMatching("uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration*")
+    }
+    extensions.configure(JacocoTaskExtension::class) {
+      destinationFile = layout.buildDirectory.file("jacoco/unitTest.exec").get().asFile
+    }
+  }
+
+  register<Test>("integrationTest") {
+    description = "Runs the integration tests"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["main"].output + configurations["testRuntimeClasspath"] + sourceSets["test"].output
+    filter {
+      includeTestsMatching("uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration*")
+    }
+    extensions.configure(JacocoTaskExtension::class) {
+      destinationFile = layout.buildDirectory.file("jacoco/integrationTest.exec").get().asFile
+    }
+  }
+  withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
+  }
+
+  testlogger {
+    theme = com.adarshr.gradle.testlogger.theme.ThemeType.MOCHA
+  }
+}

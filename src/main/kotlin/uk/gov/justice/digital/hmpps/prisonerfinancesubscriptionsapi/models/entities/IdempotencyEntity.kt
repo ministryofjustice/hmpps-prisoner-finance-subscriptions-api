@@ -1,0 +1,32 @@
+package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import org.hibernate.annotations.Immutable
+import org.springframework.data.domain.Persistable
+import java.util.UUID
+
+@Entity
+@Table(name = "idempotency_keys")
+@Immutable
+class IdempotencyEntity(
+
+  @Id
+  @Column(name = "idempotency_key_id", nullable = false, unique = true)
+  val idempotencyKey: UUID,
+
+  @OneToOne(optional = false, fetch = jakarta.persistence.FetchType.EAGER)
+  @JoinColumn(name = "subscription_id", nullable = false)
+  val subscription: SubscriptionEntity,
+
+) : Persistable<UUID> {
+  override fun getId(): UUID = idempotencyKey
+
+  // Because idempotency records are typically write-once and never updated,
+  // When this is hardcoded to true. This forces an INSERT every time.
+  override fun isNew(): Boolean = true
+}
