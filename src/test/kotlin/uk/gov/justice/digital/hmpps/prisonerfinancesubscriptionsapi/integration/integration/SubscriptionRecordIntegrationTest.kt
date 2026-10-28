@@ -106,7 +106,6 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `should return 201 when legacy payment profile id is not included`() {
-
       val createSubscriptionRequestWithoutLegacyPaymentProfileId = CreateSubscriptionRequest(
         legacyPaymentProfileId = null,
         amount = 50,
@@ -136,7 +135,6 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       assertThat(response.id).isNotNull
       assertThat(response.legacyPaymentProfileId).isNull()
-
     }
 
     @Test
