@@ -36,22 +36,5 @@ services:
       timeout: 5s
       retries: 5
 
-  hmpps-auth:
-    image: ghcr.io/ministryofjustice/hmpps-auth:latest
-    networks:
-      - hmpps
-    container_name: hmpps-auth
-    ports:
-      - "8090:8080"
-    healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8080"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=dev
-      - APPLICATION_AUTHENTICATION_UI_ALLOWLIST=0.0.0.0/0
-
 networks:
   hmpps:

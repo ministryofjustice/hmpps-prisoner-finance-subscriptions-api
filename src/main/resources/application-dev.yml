@@ -12,3 +12,18 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+spring:
+  application:
+    name: hmpps-prisoner-finance-subscriptions-api
+
+  datasource:
+    url: 'jdbc:postgresql://${DB_SERVER:localhost:5432}/${DB_NAME:subscriptions}?sslmode=prefer'
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+
+
+subscriptions-api:
+  client:
+    id: ${SUBSCRIPTIONS_API_CLIENT_ID:hmpps-prisoner-finance-subscriptions-api-1}
+    secret: ${SUBSCRIPTIONS_API_CLIENT_SECRET:clientsecret}
