@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.DayOfWeek
@@ -30,6 +31,8 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
   @Nested
   inner class CreateSubscription {
+
+    // TO-DO: Add test for posting same profile id for different idempotency keys
 
     val createSubscriptionRequest = CreateSubscriptionRequest(
       legacyPaymentProfileId = 123456789,
@@ -231,6 +234,71 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isForbidden
+    }
+  }
+
+  @Nested
+  inner class GetSubscriptionSummaryTest {
+
+    @Test
+    fun `should return 200 and correct values when the prisoner has subscriptions`() {
+      val prisonNumber = "A1234BC"
+
+      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456788,
+        amount = 100,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val secondCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456789,
+        amount = 150,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val expectedResponse = AccountSubscriptionSummaryResponse(250, 2)
+
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .bodyValue(firstCreateSubscriptionRequest)
+        .exchange()
+
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .bodyValue(secondCreateSubscriptionRequest)
+        .exchange()
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<AccountSubscriptionSummaryResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.weeklyPaymentAmount).isEqualTo(expectedResponse.weeklyPaymentAmount)
+      assertThat(actualResponse.subscriptionCount).isEqualTo(expectedResponse.subscriptionCount)
     }
   }
 }
