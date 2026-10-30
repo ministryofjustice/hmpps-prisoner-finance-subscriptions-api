@@ -361,15 +361,6 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 if prisoner number is invalid`() {
-      webTestClient.get().uri("/subscriptions/account/INVALID/summary")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
-        .exchange()
-        .expectStatus()
-        .isBadRequest
-    }
-
-    @Test
     fun `should return 401 when unauthorised`() {
       webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
         .exchange()

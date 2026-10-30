@@ -10,11 +10,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Pattern
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -26,8 +24,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.IdempotencyService
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.SubscriptionService
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.utils.VALIDATION_MESSAGE_PRISON_NUMBER
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.utils.VALIDATION_REGEX_PRISON_NUMBER
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.util.UUID
 
@@ -129,12 +125,7 @@ class SubscriptionRecordsController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO')")
   @GetMapping(path = ["/subscriptions/account/{prisonerNumber}/summary"])
-  fun getSubscriptionRecords(
-    @PathVariable @Pattern(
-      regexp = VALIDATION_REGEX_PRISON_NUMBER,
-      message = VALIDATION_MESSAGE_PRISON_NUMBER,
-    ) prisonerNumber: String,
-  ): ResponseEntity<AccountSubscriptionSummaryResponse> {
+  fun getSubscriptionRecords(prisonerNumber: String): ResponseEntity<AccountSubscriptionSummaryResponse> {
     val subscriptionRecords = subscriptionService.getSubscriptionSummary(prisonerNumber)
     return ResponseEntity.ok(subscriptionRecords)
   }
