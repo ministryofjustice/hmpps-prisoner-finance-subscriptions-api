@@ -64,14 +64,14 @@ class SubscriptionServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }.thenAnswer { it.arguments[0] }
+      whenever { subscriptionsRepository.saveAndFlush(any<SubscriptionEntity>()) }.thenAnswer { it.arguments[0] }
       result = subscriptionService.createSubscription(createSubscriptionRequest, idempotency.idempotencyKey)
     }
 
     @Test
     fun `should save the subscription record and idempotency key`() {
-      verify(subscriptionsRepository, times(1)).save(subscriptionCaptor.capture())
-      verify(idempotencyKeyDataRepository, times(1)).save(idempotencyCaptor.capture())
+      verify(subscriptionsRepository, times(1)).saveAndFlush(subscriptionCaptor.capture())
+      verify(idempotencyKeyDataRepository, times(1)).saveAndFlush(idempotencyCaptor.capture())
 
       assertThat(subscriptionCaptor.firstValue.legacyPaymentProfileId).isEqualTo(createSubscriptionRequest.legacyPaymentProfileId)
       assertThat(idempotencyCaptor.firstValue.subscription).isEqualTo(subscriptionCaptor.firstValue)

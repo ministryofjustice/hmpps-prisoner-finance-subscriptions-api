@@ -12,6 +12,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException
 import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.HandlerMethodValidationException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -95,6 +96,20 @@ class PrisonerFinanceSubscriptionsApiExceptionHandler {
         developerMessage = e.message,
       ),
     ).also { log.error("Unexpected exception", e) }
+
+  @ExceptionHandler(HandlerMethodValidationException::class)
+  fun handleMethodArgumentTypeMismatchException(e: HandlerMethodValidationException): ResponseEntity<ErrorResponse> {
+    val userMessage = "Parameter error '${e.message}'"
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = userMessage,
+          developerMessage = e.message,
+        ),
+      ).also { log.info("MethodArgumentTypeMismatchException: {}", e.message) }
+  }
 
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
@@ -29,10 +30,10 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
   val mapper = ObjectMapper()
 
+  val prisonNumber = "A1234BC"
+
   @Nested
   inner class CreateSubscription {
-
-    // TO-DO: Add test for posting same profile id for different idempotency keys
 
     val createSubscriptionRequest = CreateSubscriptionRequest(
       legacyPaymentProfileId = 123456789,
@@ -76,6 +77,35 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(response.prisonId).isEqualTo(createSubscriptionRequest.prisonId)
       assertThat(response.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
       assertThat(response.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
+    }
+
+    @Test
+    fun `should return 201 record when using the same idempotency key`() {
+      val idempotencyKey = UUID.randomUUID()
+
+      val responseOne = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val responseTwo = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseOne).isEqualTo(responseTwo).usingRecursiveComparison()
     }
 
     @Test
@@ -274,7 +304,10 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         subAccountRef = SubAccountRef.CASH,
       )
 
-      val expectedResponse = AccountSubscriptionSummaryResponse(250, 2)
+      val expectedResponse = AccountSubscriptionSummaryResponse(
+        weeklyPaymentAmount = firstCreateSubscriptionRequest.amount + secondCreateSubscriptionRequest.amount,
+        subscriptionCount = 2,
+      )
 
       webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -289,7 +322,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .exchange()
 
       val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
         .exchange()
         .expectStatus()
         .isOk
@@ -299,6 +332,49 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       assertThat(actualResponse.weeklyPaymentAmount).isEqualTo(expectedResponse.weeklyPaymentAmount)
       assertThat(actualResponse.subscriptionCount).isEqualTo(expectedResponse.subscriptionCount)
+    }
+
+    @Test
+    fun `should return 0 balance when the prisoner has no subscriptions`() {
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<AccountSubscriptionSummaryResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.weeklyPaymentAmount).isEqualTo(0)
+      assertThat(actualResponse.subscriptionCount).isEqualTo(0)
+    }
+
+    @Test
+    fun `should return 400 if prisoner number is invalid`() {
+      webTestClient.get().uri("/subscriptions/account/INVALID/summary")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+    }
+
+    @Test
+    fun `should return 401 when unauthorised`() {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @ParameterizedTest
+    @CsvSource("WRONG_ROLE,ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO")
+    fun `should return 403 forbidden when user does not have the correct role`(role: String) {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .exchange()
+        .expectStatus()
+        .isForbidden
     }
   }
 }
