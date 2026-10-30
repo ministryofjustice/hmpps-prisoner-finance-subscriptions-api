@@ -102,11 +102,6 @@ class SubscriptionRecordsController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountSubscriptionSummaryResponse::class))],
       ),
       ApiResponse(
-        responseCode = "400",
-        description = "Bad Request",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
         responseCode = "401",
         description = "Unauthorized - requires a valid OAuth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
