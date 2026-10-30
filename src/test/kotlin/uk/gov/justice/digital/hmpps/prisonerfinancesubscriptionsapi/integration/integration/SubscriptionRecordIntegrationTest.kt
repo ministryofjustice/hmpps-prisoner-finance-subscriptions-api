@@ -117,7 +117,6 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(responseOne.prisonId).isEqualTo(responseTwo.prisonId)
       assertThat(responseOne.prisonNumber).isEqualTo(responseTwo.prisonNumber)
       assertThat(responseOne.subAccountRef).isEqualTo(responseTwo.subAccountRef)
-
     }
 
     @Test
