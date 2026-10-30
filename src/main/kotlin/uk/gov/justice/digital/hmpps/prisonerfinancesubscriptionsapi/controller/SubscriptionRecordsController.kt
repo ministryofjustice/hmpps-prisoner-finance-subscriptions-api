@@ -13,6 +13,7 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -125,7 +126,9 @@ class SubscriptionRecordsController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO')")
   @GetMapping(path = ["/subscriptions/account/{prisonerNumber}/summary"])
-  fun getSubscriptionRecords(prisonerNumber: String): ResponseEntity<AccountSubscriptionSummaryResponse> {
+  fun getSubscriptionRecords(
+    @PathVariable prisonerNumber: String,
+  ): ResponseEntity<AccountSubscriptionSummaryResponse> {
     val subscriptionRecords = subscriptionService.getSubscriptionSummary(prisonerNumber)
     return ResponseEntity.ok(subscriptionRecords)
   }
