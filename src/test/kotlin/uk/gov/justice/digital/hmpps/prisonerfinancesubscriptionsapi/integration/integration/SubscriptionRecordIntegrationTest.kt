@@ -105,7 +105,19 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(responseOne).isEqualTo(responseTwo).usingRecursiveComparison()
+      assertThat(responseOne.id).isEqualTo(responseTwo.id)
+      assertThat(responseOne.legacyPaymentProfileId).isEqualTo(responseTwo.legacyPaymentProfileId)
+      assertThat(responseOne.amount).isEqualTo(responseTwo.amount)
+      assertThat(responseOne.dayOfPayment).isEqualTo(responseTwo.dayOfPayment)
+      assertThat(responseOne.startDate).isEqualTo(responseTwo.startDate)
+      assertThat(responseOne.endDate).isEqualTo(responseTwo.endDate)
+      assertThat(responseOne.subscriptionType).isEqualTo(responseTwo.subscriptionType)
+      assertThat(responseOne.reference).isEqualTo(responseTwo.reference)
+      assertThat(responseOne.createdBy).isEqualTo(responseTwo.createdBy)
+      assertThat(responseOne.prisonId).isEqualTo(responseTwo.prisonId)
+      assertThat(responseOne.prisonNumber).isEqualTo(responseTwo.prisonNumber)
+      assertThat(responseOne.subAccountRef).isEqualTo(responseTwo.subAccountRef)
+
     }
 
     @Test
