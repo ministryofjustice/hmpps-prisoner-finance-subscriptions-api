@@ -120,11 +120,11 @@ class SubscriptionRecordsController(
   )
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO')")
-  @GetMapping(path = ["/subscriptions/account/{prisonerNumber}/summary"])
-  fun getSubscriptionRecords(
-    @PathVariable prisonerNumber: String,
+  @GetMapping(path = ["/subscriptions/account/{prisonNumber}/summary"])
+  fun getSubscriptionAccountSummary(
+    @PathVariable prisonNumber: String,
   ): ResponseEntity<AccountSubscriptionSummaryResponse> {
-    val subscriptionRecords = subscriptionService.getSubscriptionSummary(prisonerNumber)
+    val subscriptionRecords = subscriptionService.getSubscriptionSummary(prisonNumber)
     return ResponseEntity.ok(subscriptionRecords)
   }
 }
