@@ -8,10 +8,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.DayOfWeek
@@ -27,6 +29,8 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
   }
 
   val mapper = ObjectMapper()
+
+  val prisonNumber = "A1234BC"
 
   @Nested
   inner class CreateSubscription {
@@ -73,6 +77,46 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(response.prisonId).isEqualTo(createSubscriptionRequest.prisonId)
       assertThat(response.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
       assertThat(response.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
+    }
+
+    @Test
+    fun `should return 201 record when using the same idempotency key`() {
+      val idempotencyKey = UUID.randomUUID()
+
+      val responseOne = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val responseTwo = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseOne.id).isEqualTo(responseTwo.id)
+      assertThat(responseOne.legacyPaymentProfileId).isEqualTo(responseTwo.legacyPaymentProfileId)
+      assertThat(responseOne.amount).isEqualTo(responseTwo.amount)
+      assertThat(responseOne.dayOfPayment).isEqualTo(responseTwo.dayOfPayment)
+      assertThat(responseOne.startDate).isEqualTo(responseTwo.startDate)
+      assertThat(responseOne.endDate).isEqualTo(responseTwo.endDate)
+      assertThat(responseOne.subscriptionType).isEqualTo(responseTwo.subscriptionType)
+      assertThat(responseOne.reference).isEqualTo(responseTwo.reference)
+      assertThat(responseOne.createdBy).isEqualTo(responseTwo.createdBy)
+      assertThat(responseOne.prisonId).isEqualTo(responseTwo.prisonId)
+      assertThat(responseOne.prisonNumber).isEqualTo(responseTwo.prisonNumber)
+      assertThat(responseOne.subAccountRef).isEqualTo(responseTwo.subAccountRef)
     }
 
     @Test
@@ -228,6 +272,108 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(role)))
         .headers(setIdempotencyKey(UUID.randomUUID()))
         .bodyValue(createSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isForbidden
+    }
+  }
+
+  @Nested
+  inner class GetSubscriptionSummaryTest {
+
+    @Test
+    fun `should return 200 and correct values when the prisoner has subscriptions`() {
+      val prisonNumber = "A1234BC"
+
+      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456788,
+        amount = 100,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val secondCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456789,
+        amount = 150,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val expectedResponse = AccountSubscriptionSummaryResponse(
+        weeklyPaymentAmount = firstCreateSubscriptionRequest.amount + secondCreateSubscriptionRequest.amount,
+        subscriptionCount = 2,
+      )
+
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .bodyValue(firstCreateSubscriptionRequest)
+        .exchange()
+
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .bodyValue(secondCreateSubscriptionRequest)
+        .exchange()
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<AccountSubscriptionSummaryResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.weeklyPaymentAmount).isEqualTo(expectedResponse.weeklyPaymentAmount)
+      assertThat(actualResponse.subscriptionCount).isEqualTo(expectedResponse.subscriptionCount)
+    }
+
+    @Test
+    fun `should return 0 balance when the prisoner has no subscriptions`() {
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<AccountSubscriptionSummaryResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.weeklyPaymentAmount).isEqualTo(0)
+      assertThat(actualResponse.subscriptionCount).isEqualTo(0)
+    }
+
+    @Test
+    fun `should return 401 when unauthorised`() {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @ParameterizedTest
+    @CsvSource("WRONG_ROLE", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW")
+    fun `should return 403 forbidden when user does not have the correct role`(role: String) {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus()
         .isForbidden

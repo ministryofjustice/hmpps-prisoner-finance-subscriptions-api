@@ -8,7 +8,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
-class SubscriptionResponse(
+data class SubscriptionResponse(
   @field:Schema(description = "ID of the subscription", example = "123e4567-e89b-12d3-a456-426655440000")
   val id: UUID,
   @field:Schema(description = "The legacy payment profile ID", example = "123456789")

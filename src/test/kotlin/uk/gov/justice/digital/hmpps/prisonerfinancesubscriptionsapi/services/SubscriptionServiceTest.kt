@@ -26,7 +26,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
-class RecordServiceTest {
+class SubscriptionServiceTest {
 
   @Mock
   lateinit var idempotencyKeyDataRepository: IdempotencyKeyDataRepository
@@ -35,7 +35,7 @@ class RecordServiceTest {
   lateinit var subscriptionsRepository: SubscriptionsRepository
 
   @InjectMocks
-  private lateinit var recordService: RecordService
+  private lateinit var subscriptionService: SubscriptionService
 
   @Nested
   inner class CreateSubscription {
@@ -64,14 +64,14 @@ class RecordServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }.thenAnswer { it.arguments[0] }
-      result = recordService.createSubscription(createSubscriptionRequest, idempotency.idempotencyKey)
+      whenever { subscriptionsRepository.saveAndFlush(any<SubscriptionEntity>()) }.thenAnswer { it.arguments[0] }
+      result = subscriptionService.createSubscription(createSubscriptionRequest, idempotency.idempotencyKey)
     }
 
     @Test
     fun `should save the subscription record and idempotency key`() {
-      verify(subscriptionsRepository, times(1)).save(subscriptionCaptor.capture())
-      verify(idempotencyKeyDataRepository, times(1)).save(idempotencyCaptor.capture())
+      verify(subscriptionsRepository, times(1)).saveAndFlush(subscriptionCaptor.capture())
+      verify(idempotencyKeyDataRepository, times(1)).saveAndFlush(idempotencyCaptor.capture())
 
       assertThat(subscriptionCaptor.firstValue.legacyPaymentProfileId).isEqualTo(createSubscriptionRequest.legacyPaymentProfileId)
       assertThat(idempotencyCaptor.firstValue.subscription).isEqualTo(subscriptionCaptor.firstValue)
@@ -93,6 +93,39 @@ class RecordServiceTest {
       assertThat(result.prisonId).isEqualTo(createSubscriptionRequest.prisonId)
       assertThat(result.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
       assertThat(result.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
+    }
+  }
+
+  @Nested
+  inner class GetSubscriptionSummary {
+    val prisonerNumber = "A1234BC"
+
+    @Test
+    fun `should return the subscription summary as a response`() {
+      val mockedSubscriptionEntity = SubscriptionEntity(
+        subscriptionId = UUID.randomUUID(),
+        legacyPaymentProfileId = 12345L,
+        amount = 10,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(1),
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "",
+        prisonNumber = prisonerNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.findByPrisonNumber(prisonerNumber) }.thenReturn(
+        listOf(mockedSubscriptionEntity, mockedSubscriptionEntity),
+      )
+
+      val result = subscriptionService.getSubscriptionSummary(prisonerNumber)
+
+      assertThat(result.subscriptionCount).isEqualTo(2)
+      assertThat(result.weeklyPaymentAmount).isEqualTo(20)
     }
   }
 }
