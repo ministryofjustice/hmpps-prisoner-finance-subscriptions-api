@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.IdempotencyService
@@ -126,5 +127,26 @@ class SubscriptionRecordsController(
   ): ResponseEntity<AccountSubscriptionSummaryResponse> {
     val subscriptionRecords = subscriptionService.getSubscriptionSummary(prisonNumber)
     return ResponseEntity.ok(subscriptionRecords)
+  }
+
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Get subscription summary",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountSubscriptionSummaryResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW')")
+  @PostMapping(path = ["/subscriptions/{subscriptionId}/update"])
+  fun updateSubscription(
+    @PathVariable subscriptionId: UUID,
+    @Valid @RequestBody updateSubscriptionRequest: UpdateSubscriptionRequest,
+  ): ResponseEntity<SubscriptionResponse> {
+    val updatedSubscriptionResponse = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+    return ResponseEntity.ok(updatedSubscriptionResponse)
   }
 }

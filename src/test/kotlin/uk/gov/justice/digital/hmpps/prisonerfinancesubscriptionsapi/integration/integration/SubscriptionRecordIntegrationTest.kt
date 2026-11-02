@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -377,6 +378,110 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isForbidden
+    }
+  }
+
+  @Nested
+  inner class UpdateSubscription {
+
+    @Test
+    fun `should call update subscription and return a 200 when successfully updated`() {
+      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456788,
+        amount = 100,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val response = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .bodyValue(firstCreateSubscriptionRequest)
+        .exchange()
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = LocalDate.now(),
+      )
+
+      webTestClient.post().uri("/subscriptions/${response.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `should call update subscription and return a 200, subscription entity end date should be updated`() {
+      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456788,
+        amount = 100,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val response = webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .bodyValue(firstCreateSubscriptionRequest)
+        .exchange()
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = LocalDate.now(),
+      )
+
+      val updatedResponse = webTestClient.post().uri("/subscriptions/${response.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(updatedResponse.endDate).isEqualTo(updateSubscriptionRequest.endDate)
+    }
+
+    @Test
+    fun `should return 404 when subscription does not exist`() {
+      val invalidSubscriptionId = UUID.randomUUID()
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = LocalDate.now(),
+      )
+
+      webTestClient.post().uri("/subscriptions/$invalidSubscriptionId/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isNotFound
     }
   }
 }

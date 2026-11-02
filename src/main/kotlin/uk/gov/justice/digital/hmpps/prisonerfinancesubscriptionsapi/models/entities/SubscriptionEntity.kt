@@ -23,7 +23,7 @@ import java.util.UUID
     ),
   ],
 )
-class SubscriptionEntity(
+data class SubscriptionEntity(
 
   @Id
   @Immutable

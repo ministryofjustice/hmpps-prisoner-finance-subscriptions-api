@@ -96,6 +96,17 @@ class PrisonerFinanceSubscriptionsApiExceptionHandler {
       ),
     ).also { log.error("Unexpected exception", e) }
 
+  @ExceptionHandler(CustomException::class)
+  fun handleCustomException(e: CustomException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(e.status)
+    .body(
+      ErrorResponse(
+        status = e.status.value(),
+        userMessage = e.message,
+        developerMessage = e.developerMessage ?: e.message,
+      ),
+    ).also { log.info("CustomExceptionThrown: {}", e.message) }
+
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
