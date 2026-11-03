@@ -32,13 +32,16 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
   }
 
   fun updateSubscription(subscriptionId: UUID, updateSubscriptionRequest: UpdateSubscriptionRequest): SubscriptionResponse {
-    val subscriptionEntity = subscriptionsRepository.findById(subscriptionId).orElseThrow {
-      throw CustomException("Could not find subscription", HttpStatus.NOT_FOUND)
+    val subscriptionEntity = subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId)
+      ?: throw CustomException("Could not find subscription", HttpStatus.NOT_FOUND)
+
+    if (subscriptionEntity.endDate != null) {
+      throw CustomException("Subscription end date is already set", HttpStatus.BAD_REQUEST)
     }
 
-    // todo we need to replace this with the actual repo but service level tests will prove that
-    val newSubscriptionEntity = subscriptionEntity.copy(endDate = updateSubscriptionRequest.endDate)
+    subscriptionEntity.endDate = updateSubscriptionRequest.endDate
+    subscriptionsRepository.save(subscriptionEntity)
 
-    return SubscriptionResponse.fromEntity(newSubscriptionEntity)
+    return SubscriptionResponse.fromEntity(subscriptionEntity)
   }
 }

@@ -384,8 +384,10 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
   @Nested
   inner class UpdateSubscription {
 
-    @Test
-    fun `should call update subscription and return a 200 when successfully updated`() {
+    lateinit var subscriptionResponse: SubscriptionResponse
+
+    @BeforeEach
+    fun setup() {
       val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
         legacyPaymentProfileId = 123456788,
         amount = 100,
@@ -401,7 +403,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         subAccountRef = SubAccountRef.CASH,
       )
 
-      val response = webTestClient.post().uri("/subscriptions")
+      subscriptionResponse = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .headers(setIdempotencyKey(UUID.randomUUID()))
         .bodyValue(firstCreateSubscriptionRequest)
@@ -409,12 +411,15 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .expectBody<SubscriptionResponse>()
         .returnResult()
         .responseBody!!
+    }
 
-      val updateSubscriptionRequest = UpdateSubscriptionRequest(
-        endDate = LocalDate.now(),
-      )
+    val updateSubscriptionRequest = UpdateSubscriptionRequest(
+      endDate = LocalDate.now(),
+    )
 
-      webTestClient.post().uri("/subscriptions/${response.id}/update")
+    @Test
+    fun `should call update subscription and return 200 when successfully updated`() {
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .bodyValue(updateSubscriptionRequest)
         .exchange()
@@ -426,36 +431,8 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should call update subscription and return a 200, subscription entity end date should be updated`() {
-      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
-        legacyPaymentProfileId = 123456788,
-        amount = 100,
-        dayOfPayment = DayOfWeek.MONDAY,
-        startDate = LocalDate.now(),
-        endDate = null,
-        subscriptionType = "TELE",
-        reference = "REF",
-        createdBy = "USER",
-        createdAt = Instant.now(),
-        prisonId = "LEI",
-        prisonNumber = prisonNumber,
-        subAccountRef = SubAccountRef.CASH,
-      )
-
-      val response = webTestClient.post().uri("/subscriptions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .bodyValue(firstCreateSubscriptionRequest)
-        .exchange()
-        .expectBody<SubscriptionResponse>()
-        .returnResult()
-        .responseBody!!
-
-      val updateSubscriptionRequest = UpdateSubscriptionRequest(
-        endDate = LocalDate.now(),
-      )
-
-      val updatedResponse = webTestClient.post().uri("/subscriptions/${response.id}/update")
+    fun `should call update subscription and return 200, subscription entity end date should be updated`() {
+      val updatedResponse = webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .bodyValue(updateSubscriptionRequest)
         .exchange()
@@ -469,12 +446,48 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 400 when end date has already updated`() {
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+    }
+
+    @Test
+    fun `should return 401 when unauthorised`() {
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @ParameterizedTest
+    @CsvSource("WRONG_ROLE", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO")
+    fun `should return 403 forbidden when user does not have the correct role`(role: String) {
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isForbidden
+    }
+
+    @Test
     fun `should return 404 when subscription does not exist`() {
       val invalidSubscriptionId = UUID.randomUUID()
-
-      val updateSubscriptionRequest = UpdateSubscriptionRequest(
-        endDate = LocalDate.now(),
-      )
 
       webTestClient.post().uri("/subscriptions/$invalidSubscriptionId/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
