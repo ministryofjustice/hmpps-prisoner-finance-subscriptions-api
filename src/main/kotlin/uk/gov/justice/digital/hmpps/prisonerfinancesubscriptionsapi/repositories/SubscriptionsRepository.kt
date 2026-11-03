@@ -6,4 +6,5 @@ import java.util.UUID
 
 interface SubscriptionsRepository : JpaRepository<SubscriptionEntity, UUID> {
   fun findByPrisonNumber(prisonerNumber: String): List<SubscriptionEntity>
+  fun getSubscriptionEntityBySubscriptionId(id: UUID): SubscriptionEntity?
 }

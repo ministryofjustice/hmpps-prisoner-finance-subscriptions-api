@@ -23,7 +23,7 @@ import java.util.UUID
     ),
   ],
 )
-class SubscriptionEntity(
+data class SubscriptionEntity(
 
   @Id
   @Immutable
@@ -48,7 +48,7 @@ class SubscriptionEntity(
   val startDate: LocalDate,
 
   @Column(name = "end_date", nullable = true, unique = false)
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
   @Immutable
   @Column(name = "subscription_type", nullable = false, unique = false)

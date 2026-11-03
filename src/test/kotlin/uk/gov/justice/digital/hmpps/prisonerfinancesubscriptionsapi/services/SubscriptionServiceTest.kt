@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
@@ -13,10 +14,13 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.http.HttpStatus
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.SubscriptionsRepository
@@ -126,6 +130,94 @@ class SubscriptionServiceTest {
 
       assertThat(result.subscriptionCount).isEqualTo(2)
       assertThat(result.weeklyPaymentAmount).isEqualTo(20)
+    }
+  }
+
+  @Nested
+  inner class UpdateSubscription {
+
+    val subscriptionId: UUID = UUID.randomUUID()
+    val updatedEndDate: LocalDate = LocalDate.now()
+
+    @Test
+    fun `should return subscription entity once updated successfully`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = updatedEndDate,
+      )
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }
+        .thenAnswer { it.arguments[0] }
+
+      val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+      assertThat(response.endDate).isEqualTo(updatedEndDate)
+    }
+
+    @Test
+    fun `should throw exception if subscription does not exist`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = updatedEndDate,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }
+        .thenReturn(null)
+
+      val errorResponse = assertThrows<CustomException> {
+        subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+      }
+
+      assertThat(errorResponse.status).isEqualTo(HttpStatus.NOT_FOUND)
+      assertThat(errorResponse.message).isEqualTo("Could not find subscription")
+    }
+
+    @Test
+    fun `should throw exception if subscription end date is already set`() {
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now(),
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = updatedEndDate,
+      )
+
+      val errorResponse = assertThrows<CustomException> {
+        subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+      }
+
+      assertThat(errorResponse.status).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(errorResponse.message).isEqualTo("Subscription end date is already set")
     }
   }
 }
