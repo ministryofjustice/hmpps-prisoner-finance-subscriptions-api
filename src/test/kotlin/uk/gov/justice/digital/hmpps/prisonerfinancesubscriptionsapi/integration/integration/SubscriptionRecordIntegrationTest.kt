@@ -23,6 +23,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.random.Random
+import kotlin.text.get
 
 class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
@@ -502,6 +503,21 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 200 and empty list if there are no subscriptions`() {
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.totalElements).isEqualTo(0)
+      assertThat(actualResponse.content.size).isEqualTo(0)
+    }
+
+    @Test
     fun `should order results by startDate`() {
       val startDate = LocalDate.now()
 
@@ -534,6 +550,45 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val responseStartDateOrder = actualResponse.content.map { it.startDate }
 
       assertThat(expectedStartDateOrder).isEqualTo(responseStartDateOrder)
+    }
+
+    @Test
+    fun `should get second page of results of subscriptions`() {
+      repeat(25) { i ->
+        createSubscription(prisonNumber, i.toLong())
+      }
+
+      val responseBody = webTestClient.get().uri("/subscriptions/account/$prisonNumber?pageSize=24&pageNumber=2")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.content).hasSize(1)
+      assertThat(responseBody.totalElements).isEqualTo(25)
+      assertThat(responseBody.totalPages).isEqualTo(2)
+      assertThat(responseBody.pageNumber).isEqualTo(2)
+    }
+
+    @Test
+    fun `should return 401 when unauthorised`() {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 forbidden when user does not have the correct role`() {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .exchange()
+        .expectStatus()
+        .isForbidden
     }
   }
 }
