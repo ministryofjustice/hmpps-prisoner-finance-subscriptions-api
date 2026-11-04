@@ -11,9 +11,12 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
@@ -218,6 +221,52 @@ class SubscriptionServiceTest {
 
       assertThat(errorResponse.status).isEqualTo(HttpStatus.BAD_REQUEST)
       assertThat(errorResponse.message).isEqualTo("Subscription end date is already set")
+    }
+  }
+
+  @Nested
+  inner class GetSubscriptions {
+
+    @Test
+    fun `should call repository with a pageable object`() {
+      val prisonerNumber = "A1234BC"
+
+      val pageCaptor = argumentCaptor<Pageable>()
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = UUID.randomUUID(),
+        legacyPaymentProfileId = 12345,
+        amount = 10,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonerNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever(
+        subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(
+          prisonNumber = eq(prisonerNumber),
+          pageable = pageCaptor.capture(),
+        ),
+      ).thenReturn(
+        PageImpl(listOf(subscriptionEntity)),
+      )
+
+      val subscriptionResponse = subscriptionService.getSubscriptions(prisonerNumber)
+
+      assertThat(subscriptionResponse.content).hasSize(1)
+      assertThat(subscriptionResponse.content[0]).isEqualTo(SubscriptionResponse.fromEntity(subscriptionEntity))
+
+      val capturedPage = pageCaptor.firstValue
+
+      assertThat(capturedPage.pageNumber).isEqualTo(0)
+      assertThat(capturedPage.pageSize).isEqualTo(25)
     }
   }
 }

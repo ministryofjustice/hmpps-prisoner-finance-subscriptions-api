@@ -9,12 +9,20 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension.Companion.generalLedgerApi
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 @ExtendWith(HmppsAuthApiExtension::class, GeneralLedgerApiExtension::class)
@@ -42,6 +50,35 @@ abstract class IntegrationTestBase {
   protected fun stubPingWithResponse(status: Int, statusGeneralLedger: Int) {
     hmppsAuth.stubHealthPing(status)
     generalLedgerApi.stubHealthPing(statusGeneralLedger)
+  }
+
+  fun createSubscription(prisonNumber: String, paymentProfileId: Long, startDate: LocalDate = LocalDate.now()): SubscriptionResponse {
+    val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
+      legacyPaymentProfileId = paymentProfileId,
+      amount = 100,
+      dayOfPayment = DayOfWeek.MONDAY,
+      startDate = startDate,
+      endDate = null,
+      subscriptionType = "TELE",
+      reference = "REF",
+      createdBy = "USER",
+      createdAt = Instant.now(),
+      prisonId = "LEI",
+      prisonNumber = prisonNumber,
+      subAccountRef = SubAccountRef.CASH,
+    )
+
+    val subscriptionResponse = webTestClient.post().uri("/subscriptions")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+      .headers(setIdempotencyKey(UUID.randomUUID()))
+      .bodyValue(firstCreateSubscriptionRequest)
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody<SubscriptionResponse>()
+      .returnResult()
+      .responseBody!!
+
+    return subscriptionResponse
   }
 
   companion object {

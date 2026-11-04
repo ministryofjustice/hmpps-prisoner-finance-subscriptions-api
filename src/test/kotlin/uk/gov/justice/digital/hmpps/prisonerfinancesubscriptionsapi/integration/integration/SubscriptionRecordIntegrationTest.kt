@@ -15,12 +15,15 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entit
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.random.Random
+import kotlin.text.get
 
 class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
@@ -387,29 +390,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setup() {
-      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
-        legacyPaymentProfileId = 123456788,
-        amount = 100,
-        dayOfPayment = DayOfWeek.MONDAY,
-        startDate = LocalDate.now(),
-        endDate = null,
-        subscriptionType = "TELE",
-        reference = "REF",
-        createdBy = "USER",
-        createdAt = Instant.now(),
-        prisonId = "LEI",
-        prisonNumber = prisonNumber,
-        subAccountRef = SubAccountRef.CASH,
-      )
-
-      subscriptionResponse = webTestClient.post().uri("/subscriptions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .bodyValue(firstCreateSubscriptionRequest)
-        .exchange()
-        .expectBody<SubscriptionResponse>()
-        .returnResult()
-        .responseBody!!
+      subscriptionResponse = createSubscription(prisonNumber, 123456788)
     }
 
     val updateSubscriptionRequest = UpdateSubscriptionRequest(
@@ -494,6 +475,120 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isNotFound
+    }
+  }
+
+  @Nested
+  inner class GetSubscriptions {
+
+    @ParameterizedTest
+    @CsvSource("ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW")
+    fun `should return 200 and a list of subscription paged`(role: String) {
+      repeat(3) { i ->
+        createSubscription(prisonNumber = prisonNumber, paymentProfileId = i.toLong())
+      }
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.totalElements).isEqualTo(3)
+      assertThat(actualResponse.content[0].prisonNumber).isEqualTo(prisonNumber)
+      assertThat(actualResponse.content[1].prisonNumber).isEqualTo(prisonNumber)
+      assertThat(actualResponse.content[2].prisonNumber).isEqualTo(prisonNumber)
+    }
+
+    @Test
+    fun `should return 200 and empty list if there are no subscriptions`() {
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.totalElements).isEqualTo(0)
+      assertThat(actualResponse.content.size).isEqualTo(0)
+    }
+
+    @Test
+    fun `should order results by startDate`() {
+      val startDate = LocalDate.now()
+
+      val startDates = mutableListOf<LocalDate>()
+
+      repeat(10) { i ->
+
+        val randomStartDate = startDate.minusDays(Random.nextLong(0, 20))
+
+        startDates.add(randomStartDate)
+
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = i.toLong(),
+          startDate = randomStartDate,
+        )
+      }
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      val expectedStartDateOrder = startDates.sortedDescending()
+
+      val responseStartDateOrder = actualResponse.content.map { it.startDate }
+
+      assertThat(expectedStartDateOrder).isEqualTo(responseStartDateOrder)
+    }
+
+    @Test
+    fun `should get second page of results of subscriptions`() {
+      repeat(25) { i ->
+        createSubscription(prisonNumber, i.toLong())
+      }
+
+      val responseBody = webTestClient.get().uri("/subscriptions/account/$prisonNumber?pageSize=24&pageNumber=2")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.content).hasSize(1)
+      assertThat(responseBody.totalElements).isEqualTo(25)
+      assertThat(responseBody.totalPages).isEqualTo(2)
+      assertThat(responseBody.pageNumber).isEqualTo(2)
+    }
+
+    @Test
+    fun `should return 401 when unauthorised`() {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 forbidden when user does not have the correct role`() {
+      webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
+        .exchange()
+        .expectStatus()
+        .isForbidden
     }
   }
 }
