@@ -119,8 +119,8 @@ class SubscriptionRecordsController(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO])
-  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO, ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW])
+  @PreAuthorize("hasAnyAuthority('${ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO}','${ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW}')")
   @GetMapping(path = ["/subscriptions/account/{prisonNumber}/summary"])
   fun getSubscriptionSummary(
     @PathVariable prisonNumber: String,
