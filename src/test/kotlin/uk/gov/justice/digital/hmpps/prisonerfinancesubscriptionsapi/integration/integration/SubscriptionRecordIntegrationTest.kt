@@ -481,14 +481,15 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
   @Nested
   inner class GetSubscriptions {
 
-    @Test
-    fun `should return 200 and a list of subscription paged`() {
+    @ParameterizedTest
+    @CsvSource("ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW")
+    fun `should return 200 and a list of subscription paged`(role: String) {
       repeat(3) { i ->
-        createSubscription(prisonNumber, i.toLong())
+        createSubscription(prisonNumber = prisonNumber, paymentProfileId = i.toLong())
       }
 
       val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .headers(setAuthorisation(roles = listOf(role)))
         .exchange()
         .expectStatus()
         .isOk
@@ -585,7 +586,6 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     fun `should return 403 forbidden when user does not have the correct role`() {
       webTestClient.get().uri("/subscriptions/account/$prisonNumber")
         .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus()
         .isForbidden

@@ -261,8 +261,7 @@ class SubscriptionServiceTest {
       val subscriptionResponse = subscriptionService.getSubscriptions(prisonerNumber)
 
       assertThat(subscriptionResponse.content).hasSize(1)
-      assertThat(subscriptionResponse.content[0].id).isEqualTo(subscriptionEntity.subscriptionId)
-      assertThat(subscriptionResponse.content[0].prisonNumber).isEqualTo(subscriptionEntity.prisonNumber)
+      assertThat(subscriptionResponse.content[0]).isEqualTo(SubscriptionResponse.fromEntity(subscriptionEntity))
 
       val capturedPage = pageCaptor.firstValue
 
