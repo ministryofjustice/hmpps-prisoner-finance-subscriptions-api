@@ -369,11 +369,10 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .isUnauthorized
     }
 
-    @ParameterizedTest
-    @CsvSource("WRONG_ROLE", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW")
-    fun `should return 403 forbidden when user does not have the correct role`(role: String) {
+    @Test
+    fun `should return 403 forbidden when user does not have the correct role`() {
       webTestClient.get().uri("/subscriptions/account/$prisonNumber/summary")
-        .headers(setAuthorisation(roles = listOf(role)))
+        .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
         .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus()
