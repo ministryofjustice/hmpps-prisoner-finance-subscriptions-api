@@ -15,12 +15,14 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entit
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.random.Random
 
 class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
@@ -387,29 +389,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setup() {
-      val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
-        legacyPaymentProfileId = 123456788,
-        amount = 100,
-        dayOfPayment = DayOfWeek.MONDAY,
-        startDate = LocalDate.now(),
-        endDate = null,
-        subscriptionType = "TELE",
-        reference = "REF",
-        createdBy = "USER",
-        createdAt = Instant.now(),
-        prisonId = "LEI",
-        prisonNumber = prisonNumber,
-        subAccountRef = SubAccountRef.CASH,
-      )
-
-      subscriptionResponse = webTestClient.post().uri("/subscriptions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .bodyValue(firstCreateSubscriptionRequest)
-        .exchange()
-        .expectBody<SubscriptionResponse>()
-        .returnResult()
-        .responseBody!!
+      subscriptionResponse = createSubscription(prisonNumber, 123456788)
     }
 
     val updateSubscriptionRequest = UpdateSubscriptionRequest(
@@ -494,6 +474,66 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isNotFound
+    }
+  }
+
+  @Nested
+  inner class GetSubscriptions {
+
+    @Test
+    fun `should return 200 and a list of subscription paged`() {
+      repeat(3) { i ->
+        createSubscription(prisonNumber, i.toLong())
+      }
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.totalElements).isEqualTo(3)
+      assertThat(actualResponse.content[0].prisonNumber).isEqualTo(prisonNumber)
+      assertThat(actualResponse.content[1].prisonNumber).isEqualTo(prisonNumber)
+      assertThat(actualResponse.content[2].prisonNumber).isEqualTo(prisonNumber)
+    }
+
+    @Test
+    fun `should order results by startDate`() {
+      val startDate = LocalDate.now()
+
+      val startDates = mutableListOf<LocalDate>()
+
+      repeat(10) { i ->
+
+        val randomStartDate = startDate.minusDays(Random.nextLong(0, 20))
+
+        startDates.add(randomStartDate)
+
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = i.toLong(),
+          startDate = randomStartDate,
+        )
+      }
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      val expectedStartDateOrder = startDates.sortedDescending()
+
+      val responseStartDateOrder = actualResponse.content.map { it.startDate }
+
+      assertThat(expectedStartDateOrder).isEqualTo(responseStartDateOrder)
     }
   }
 }

@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.IdempotencyService
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.SubscriptionService
@@ -173,5 +174,14 @@ class SubscriptionRecordsController(
     val updatedSubscriptionResponse = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
 
     return ResponseEntity.ok(updatedSubscriptionResponse)
+  }
+
+  @GetMapping(path = ["/subscriptions/account/{prisonNumber}"])
+  fun getSubscriptions(
+    @PathVariable prisonNumber: String,
+  ): ResponseEntity<PagedResponse<SubscriptionResponse>> {
+    val subscriptionsResponse = subscriptionService.getSubscriptions(prisonNumber)
+
+    return ResponseEntity.ok(subscriptionsResponse)
   }
 }
