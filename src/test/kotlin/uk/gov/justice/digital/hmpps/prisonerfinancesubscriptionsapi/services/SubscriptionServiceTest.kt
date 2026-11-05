@@ -253,7 +253,6 @@ class SubscriptionServiceTest {
         subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(
           prisonNumber = eq(prisonerNumber),
           pageable = pageCaptor.capture(),
-          endDate = eq(LocalDate.now()),
         ),
       ).thenReturn(
         PageImpl(listOf(subscriptionEntity)),

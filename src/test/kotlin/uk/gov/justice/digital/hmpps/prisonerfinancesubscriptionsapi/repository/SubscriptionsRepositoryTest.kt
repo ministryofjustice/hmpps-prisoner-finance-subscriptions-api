@@ -102,7 +102,7 @@ class SubscriptionsRepositoryTest @Autowired constructor(
         endDate = LocalDate.now().minusDays(1),
         prisonNumber = prisonNumber,
       )
-      val results = subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pageRequest, LocalDate.now())
+      val results = subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pageRequest)
 
       assertThat(results.content.size).isEqualTo(0)
     }
@@ -115,7 +115,7 @@ class SubscriptionsRepositoryTest @Autowired constructor(
         endDate = LocalDate.now().plusDays(7),
         prisonNumber = prisonNumber,
       )
-      val results = subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pageRequest, LocalDate.now())
+      val results = subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pageRequest)
 
       assertThat(results.content.size).isEqualTo(1)
     }
