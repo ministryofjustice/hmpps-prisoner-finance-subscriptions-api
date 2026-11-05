@@ -250,9 +250,10 @@ class SubscriptionServiceTest {
       )
 
       whenever(
-        subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(
+        subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(
           prisonNumber = eq(prisonerNumber),
           pageable = pageCaptor.capture(),
+          endDate = eq(LocalDate.now()),
         ),
       ).thenReturn(
         PageImpl(listOf(subscriptionEntity)),

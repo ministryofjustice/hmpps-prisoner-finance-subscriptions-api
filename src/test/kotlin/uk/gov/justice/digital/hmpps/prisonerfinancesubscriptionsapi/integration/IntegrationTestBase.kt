@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 import java.time.DayOfWeek
@@ -52,13 +54,36 @@ abstract class IntegrationTestBase {
     generalLedgerApi.stubHealthPing(statusGeneralLedger)
   }
 
-  fun createSubscription(prisonNumber: String, paymentProfileId: Long, startDate: LocalDate = LocalDate.now()): SubscriptionResponse {
+  fun updateSubscription(subscriptionId: UUID, endDate: LocalDate): SubscriptionResponse {
+    val updateSubscriptionRequest: UpdateSubscriptionRequest = UpdateSubscriptionRequest(
+      endDate = endDate,
+    )
+
+    val updatedResponse = webTestClient.post().uri("/subscriptions/$subscriptionId/update")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+      .bodyValue(updateSubscriptionRequest)
+      .exchange()
+      .expectStatus()
+      .isOk
+      .expectBody<SubscriptionResponse>()
+      .returnResult()
+      .responseBody!!
+
+    return updatedResponse
+  }
+
+  fun createSubscription(
+    prisonNumber: String,
+    paymentProfileId: Long,
+    startDate: LocalDate = LocalDate.now(),
+    endDate: LocalDate? = null,
+  ): SubscriptionResponse {
     val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
       legacyPaymentProfileId = paymentProfileId,
       amount = 100,
       dayOfPayment = DayOfWeek.MONDAY,
       startDate = startDate,
-      endDate = null,
+      endDate = endDate,
       subscriptionType = "TELE",
       reference = "REF",
       createdBy = "USER",

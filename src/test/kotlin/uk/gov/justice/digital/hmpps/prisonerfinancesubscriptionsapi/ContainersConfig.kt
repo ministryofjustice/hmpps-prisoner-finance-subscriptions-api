@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration
+package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi
 
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
