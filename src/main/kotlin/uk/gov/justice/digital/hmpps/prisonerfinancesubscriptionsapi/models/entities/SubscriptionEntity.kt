@@ -78,7 +78,6 @@ data class SubscriptionEntity(
   @Enumerated(EnumType.STRING)
   @Column(name = "sub_account_ref", nullable = false, unique = false)
   val subAccountRef: SubAccountRef,
-
 )
 
 enum class SubAccountRef {
