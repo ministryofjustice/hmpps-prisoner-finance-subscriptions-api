@@ -51,7 +51,7 @@ class SubscriptionsRepositoryTest @Autowired constructor(
       prisonNumber = prisonNumber,
       subAccountRef = SubAccountRef.CASH,
     )
-    entityManager.persist(subscription)
+    subscriptionsRepository.save(subscription)
     return subscription
   }
 
