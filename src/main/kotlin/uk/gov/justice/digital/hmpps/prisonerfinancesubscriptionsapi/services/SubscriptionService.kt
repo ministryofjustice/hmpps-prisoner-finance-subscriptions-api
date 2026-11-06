@@ -60,7 +60,7 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
       ),
     )
 
-    val subscriptions = subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(prisonNumber, pagedRequest)
+    val subscriptions = subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pagedRequest)
 
     return subscriptions.toPageResponse { content ->
       content.map { SubscriptionResponse.fromEntity(it) }

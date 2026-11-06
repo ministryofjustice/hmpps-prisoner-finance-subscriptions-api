@@ -575,6 +575,55 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should not return any inactive subscriptions`() {
+      // endDate is null therefore active
+      repeat(5) { i ->
+        createSubscription(prisonNumber, i.toLong())
+      }
+
+      // endDate is today therefore still active
+      createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 6,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now(),
+      )
+
+      // endDate is in future therefore active
+      createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 7,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(7),
+      )
+
+      // endDate is in the past therefore inactive
+      val subscriptionToBeCancelled = createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 8,
+        startDate = LocalDate.now().minusDays(7),
+        endDate = null,
+      )
+
+      updateSubscription(
+        subscriptionId = subscriptionToBeCancelled.id,
+        endDate = LocalDate.now().minusDays(1),
+      )
+      //
+
+      val responseBody = webTestClient.get().uri("/subscriptions/account/$prisonNumber?pageSize=25&pageNumber=1")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.content.size).isEqualTo(7)
+    }
+
+    @Test
     fun `should return 401 when unauthorised`() {
       webTestClient.get().uri("/subscriptions/account/$prisonNumber")
         .exchange()
