@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionsStatus
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
@@ -208,11 +209,13 @@ class SubscriptionRecordsController(
     @PathVariable prisonNumber: String,
     @RequestParam @Min(1) pageNumber: Int = 1,
     @RequestParam @Min(1) pageSize: Int = 25,
+    @RequestParam status: SubscriptionsStatus? = null,
   ): ResponseEntity<PagedResponse<SubscriptionResponse>> {
     val subscriptionsResponse = subscriptionService.getSubscriptions(
       prisonNumber = prisonNumber,
       pageNumber = pageNumber,
       pageSize = pageSize,
+      status = status,
     )
 
     return ResponseEntity.ok(subscriptionsResponse)
