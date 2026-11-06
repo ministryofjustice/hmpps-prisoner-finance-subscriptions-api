@@ -183,7 +183,7 @@ class SubscriptionRecordsController(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Get a list of active subscriptions for a prisoner",
+        description = "Get a list of subscriptions for a prisoner",
       ),
       ApiResponse(
         responseCode = "401",
