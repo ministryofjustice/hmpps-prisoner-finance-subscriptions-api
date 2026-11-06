@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionsStatus
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.SubscriptionsRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.utils.toPageResponse
+import java.time.LocalDate
 import java.util.UUID
 
 @Service
@@ -49,7 +51,7 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
     return SubscriptionResponse.fromEntity(subscriptionEntity)
   }
 
-  fun getSubscriptions(prisonNumber: String, pageNumber: Int = 1, pageSize: Int = 25): PagedResponse<SubscriptionResponse> {
+  fun getSubscriptions(prisonNumber: String, pageNumber: Int = 1, pageSize: Int = 25, status: SubscriptionsStatus? = null): PagedResponse<SubscriptionResponse> {
     val zeroIndexedPage: Int = pageNumber - 1
     val pagedRequest = PageRequest.of(
       zeroIndexedPage,
@@ -60,7 +62,15 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
       ),
     )
 
-    val subscriptions = subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pagedRequest)
+    val subscriptions = when (status) {
+      SubscriptionsStatus.ACTIVE -> subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pagedRequest)
+      SubscriptionsStatus.INACTIVE -> subscriptionsRepository.getSubscriptionEntitiesByPrisonNumberAndEndDateIsBefore(
+        prisonNumber = prisonNumber,
+        endDate = LocalDate.now(),
+        pageable = pagedRequest,
+      )
+      null -> subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(prisonNumber, pagedRequest)
+    }
 
     return subscriptions.toPageResponse { content ->
       content.map { SubscriptionResponse.fromEntity(it) }

@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.Custo
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionsStatus
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
@@ -228,8 +229,8 @@ class SubscriptionServiceTest {
   inner class GetSubscriptions {
 
     @Test
-    fun `should call repository with a pageable object`() {
-      val prisonerNumber = "A1234BC"
+    fun `should call for repository for active subscriptions with a pageable object`() {
+      val prisonNumber = "A1234BC"
 
       val pageCaptor = argumentCaptor<Pageable>()
 
@@ -245,20 +246,105 @@ class SubscriptionServiceTest {
         createdBy = "",
         createdAt = Instant.now(),
         prisonId = "LEI",
-        prisonNumber = prisonerNumber,
+        prisonNumber = prisonNumber,
         subAccountRef = SubAccountRef.CASH,
       )
 
       whenever(
         subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(
-          prisonNumber = eq(prisonerNumber),
+          prisonNumber = eq(prisonNumber),
           pageable = pageCaptor.capture(),
         ),
       ).thenReturn(
         PageImpl(listOf(subscriptionEntity)),
       )
 
-      val subscriptionResponse = subscriptionService.getSubscriptions(prisonerNumber)
+      val subscriptionResponse = subscriptionService.getSubscriptions(prisonNumber, status = SubscriptionsStatus.ACTIVE)
+
+      assertThat(subscriptionResponse.content).hasSize(1)
+      assertThat(subscriptionResponse.content[0]).isEqualTo(SubscriptionResponse.fromEntity(subscriptionEntity))
+
+      val capturedPage = pageCaptor.firstValue
+
+      assertThat(capturedPage.pageNumber).isEqualTo(0)
+      assertThat(capturedPage.pageSize).isEqualTo(25)
+    }
+
+    @Test
+    fun `should call for repository for all subscriptions with a pageable object`() {
+      val prisonNumber = "A1234BC"
+
+      val pageCaptor = argumentCaptor<Pageable>()
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = UUID.randomUUID(),
+        legacyPaymentProfileId = 12345,
+        amount = 10,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever(
+        subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(
+          prisonNumber = eq(prisonNumber),
+          pageable = pageCaptor.capture(),
+        ),
+      ).thenReturn(
+        PageImpl(listOf(subscriptionEntity)),
+      )
+
+      val subscriptionResponse = subscriptionService.getSubscriptions(prisonNumber, status = null)
+
+      assertThat(subscriptionResponse.content).hasSize(1)
+      assertThat(subscriptionResponse.content[0]).isEqualTo(SubscriptionResponse.fromEntity(subscriptionEntity))
+
+      val capturedPage = pageCaptor.firstValue
+
+      assertThat(capturedPage.pageNumber).isEqualTo(0)
+      assertThat(capturedPage.pageSize).isEqualTo(25)
+    }
+
+    @Test
+    fun `should call for repository for inactive subscriptions with a pageable object`() {
+      val prisonNumber = "A1234BC"
+
+      val pageCaptor = argumentCaptor<Pageable>()
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = UUID.randomUUID(),
+        legacyPaymentProfileId = 12345,
+        amount = 10,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = prisonNumber,
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever(
+        subscriptionsRepository.getSubscriptionEntitiesByPrisonNumberAndEndDateIsBefore(
+          prisonNumber = eq(prisonNumber),
+          endDate = eq(LocalDate.now()),
+          pageable = pageCaptor.capture(),
+        ),
+      ).thenReturn(
+        PageImpl(listOf(subscriptionEntity)),
+      )
+
+      val subscriptionResponse = subscriptionService.getSubscriptions(prisonNumber, status = SubscriptionsStatus.INACTIVE)
 
       assertThat(subscriptionResponse.content).hasSize(1)
       assertThat(subscriptionResponse.content[0]).isEqualTo(SubscriptionResponse.fromEntity(subscriptionEntity))
