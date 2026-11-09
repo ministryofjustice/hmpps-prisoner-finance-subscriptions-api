@@ -483,9 +483,23 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @ParameterizedTest
     @CsvSource("ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW")
-    fun `should return 200 and a list of subscription paged`(role: String) {
+    fun `should return 200 and a list of all subscriptions paged when filter not supplied`(role: String) {
       repeat(3) { i ->
-        createSubscription(prisonNumber = prisonNumber, paymentProfileId = i.toLong())
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = i.toLong(),
+          startDate = LocalDate.now(),
+          endDate = null,
+        )
+      }
+
+      repeat(3) { i ->
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = 3 + i.toLong(),
+          startDate = LocalDate.now().minusWeeks(2),
+          endDate = LocalDate.now().minusDays(1),
+        )
       }
 
       val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber")
@@ -497,10 +511,85 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
+      assertThat(actualResponse.totalElements).isEqualTo(6)
+    }
+
+    @Test
+    fun `should return 200 and a list of active subscriptions paged when filter is supplied`() {
+      repeat(3) { i ->
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = i.toLong(),
+          startDate = LocalDate.now(),
+          endDate = null,
+        )
+      }
+
+      repeat(3) { i ->
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = 3 + i.toLong(),
+          startDate = LocalDate.now().minusWeeks(2),
+          endDate = LocalDate.now().minusDays(1),
+        )
+      }
+
+      createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 7,
+        startDate = LocalDate.now().minusWeeks(1),
+        endDate = LocalDate.now().plusDays(1),
+      )
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber?status=ACTIVE")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(actualResponse.totalElements).isEqualTo(4)
+    }
+
+    @Test
+    fun `should return 200 and a list of inactive subscriptions paged when filter is supplied`() {
+      repeat(3) { i ->
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = i.toLong(),
+          startDate = LocalDate.now(),
+          endDate = null,
+        )
+      }
+
+      repeat(3) { i ->
+        createSubscription(
+          prisonNumber = prisonNumber,
+          paymentProfileId = 3 + i.toLong(),
+          startDate = LocalDate.now().minusWeeks(2),
+          endDate = LocalDate.now().minusDays(1),
+        )
+      }
+
+      createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 7,
+        startDate = LocalDate.now().minusWeeks(1),
+        endDate = LocalDate.now().plusDays(1),
+      )
+
+      val actualResponse = webTestClient.get().uri("/subscriptions/account/$prisonNumber?status=INACTIVE")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PagedResponse<SubscriptionResponse>>()
+        .returnResult()
+        .responseBody!!
+
       assertThat(actualResponse.totalElements).isEqualTo(3)
-      assertThat(actualResponse.content[0].prisonNumber).isEqualTo(prisonNumber)
-      assertThat(actualResponse.content[1].prisonNumber).isEqualTo(prisonNumber)
-      assertThat(actualResponse.content[2].prisonNumber).isEqualTo(prisonNumber)
     }
 
     @Test
@@ -572,55 +661,6 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody.totalElements).isEqualTo(25)
       assertThat(responseBody.totalPages).isEqualTo(2)
       assertThat(responseBody.pageNumber).isEqualTo(2)
-    }
-
-    @Test
-    fun `should not return any inactive subscriptions`() {
-      // endDate is null therefore active
-      repeat(5) { i ->
-        createSubscription(prisonNumber, i.toLong())
-      }
-
-      // endDate is today therefore still active
-      createSubscription(
-        prisonNumber = prisonNumber,
-        paymentProfileId = 6,
-        startDate = LocalDate.now(),
-        endDate = LocalDate.now(),
-      )
-
-      // endDate is in future therefore active
-      createSubscription(
-        prisonNumber = prisonNumber,
-        paymentProfileId = 7,
-        startDate = LocalDate.now(),
-        endDate = LocalDate.now().plusDays(7),
-      )
-
-      // endDate is in the past therefore inactive
-      val subscriptionToBeCancelled = createSubscription(
-        prisonNumber = prisonNumber,
-        paymentProfileId = 8,
-        startDate = LocalDate.now().minusDays(7),
-        endDate = null,
-      )
-
-      updateSubscription(
-        subscriptionId = subscriptionToBeCancelled.id,
-        endDate = LocalDate.now().minusDays(1),
-      )
-      //
-
-      val responseBody = webTestClient.get().uri("/subscriptions/account/$prisonNumber?pageSize=25&pageNumber=1")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO)))
-        .exchange()
-        .expectStatus()
-        .isOk
-        .expectBody<PagedResponse<SubscriptionResponse>>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(responseBody.content.size).isEqualTo(7)
     }
 
     @Test
