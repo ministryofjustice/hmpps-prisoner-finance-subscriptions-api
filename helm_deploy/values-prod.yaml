@@ -29,7 +29,7 @@ generic-service:
 
   postgresDatabaseRestore:
     jobName: "hmpps-prisoner-finance-subscriptions-api-postgres-restore"
-    backupJobName: "hmpps-prisoner-finance-subscriptions-api-postgres-backup"
+    backupJobName: "hmpps-pf-subscriptions-api-postgres-backup"
     enabled: true
     timeout: 3590
     namespace_secrets:
