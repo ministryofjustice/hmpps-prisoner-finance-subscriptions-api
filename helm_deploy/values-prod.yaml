@@ -28,7 +28,7 @@ generic-service:
     #       https://user-guide.cloud-platform.service.justice.gov.uk/documentation/networking/modsecurity.html#modsecurity-web-application-firewall
 
   postgresDatabaseRestore:
-    jobName: "hmpps-prisoner-finance-subscriptions-api-postgres-restore"
+    jobName: "hmpps-pf-subscriptions-api-postgres-restore"
     backupJobName: "hmpps-pf-subscriptions-api-postgres-backup"
     enabled: true
     timeout: 3590
