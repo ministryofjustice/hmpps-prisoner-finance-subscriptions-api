@@ -43,9 +43,8 @@ data class SubscriptionEntity(
   @Column(name = "day_of_payment", nullable = false, unique = false)
   val dayOfPayment: DayOfWeek,
 
-  @Immutable
   @Column(name = "start_date", nullable = false, unique = false)
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   @Column(name = "end_date", nullable = true, unique = false)
   var endDate: LocalDate? = null,

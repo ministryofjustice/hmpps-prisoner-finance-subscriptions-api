@@ -102,6 +102,33 @@ class SubscriptionServiceTest {
       assertThat(result.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
       assertThat(result.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
     }
+
+    @Test
+    fun `should throw exception if subscription end date is before start date`() {
+      val startDate = LocalDate.now()
+
+      val invalidCreateSubscriptionRequest = CreateSubscriptionRequest(
+        legacyPaymentProfileId = 123456,
+        amount = 50L,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = startDate.plusYears(180),
+        endDate = startDate.plusDays(10),
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "TEST_USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "AD12345",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val errorResponse = assertThrows<CustomException> {
+        subscriptionService.createSubscription(invalidCreateSubscriptionRequest, idempotency.idempotencyKey)
+      }
+
+      assertThat(errorResponse.status).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(errorResponse.message).isEqualTo("Subscription end date before start date")
+    }
   }
 
   @Nested
@@ -144,17 +171,18 @@ class SubscriptionServiceTest {
     val updatedEndDate: LocalDate = LocalDate.now()
 
     @Test
-    fun `should return subscription entity once updated successfully`() {
+    fun `should return subscription entity once end date updated successfully`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = updatedEndDate,
       )
 
+      val startDate = LocalDate.now()
       val subscriptionEntity = SubscriptionEntity(
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
         dayOfPayment = DayOfWeek.MONDAY,
-        startDate = LocalDate.now(),
+        startDate = startDate,
         endDate = null,
         subscriptionType = "",
         reference = "",
@@ -173,6 +201,74 @@ class SubscriptionServiceTest {
       val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
 
       assertThat(response.endDate).isEqualTo(updatedEndDate)
+      assertThat(response.startDate).isEqualTo(startDate)
+    }
+
+    @Test
+    fun `should return subscription entity once start date updated successfully`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = LocalDate.now(),
+      )
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now().plusYears(180),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }
+        .thenAnswer { it.arguments[0] }
+
+      val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+      assertThat(response.startDate).isEqualTo(updateSubscriptionRequest.startDate)
+      assertThat(response.endDate).isNull()
+    }
+
+    @Test
+    fun `should return subscription entity once start date and end date updated successfully`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(10),
+      )
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now().plusYears(180),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }
+        .thenAnswer { it.arguments[0] }
+
+      val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+      assertThat(response.startDate).isEqualTo(updateSubscriptionRequest.startDate)
+      assertThat(response.endDate).isEqualTo(updateSubscriptionRequest.endDate)
     }
 
     @Test
@@ -193,14 +289,16 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    fun `should throw exception if subscription end date is already set`() {
+    fun `should throw exception if request is trying to set an end date before the start date`() {
+      val startDate = LocalDate.now()
+      val endDateInThePast = LocalDate.now().minusDays(7)
       val subscriptionEntity = SubscriptionEntity(
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
         dayOfPayment = DayOfWeek.MONDAY,
-        startDate = LocalDate.now(),
-        endDate = LocalDate.now(),
+        startDate = startDate,
+        endDate = null,
         subscriptionType = "",
         reference = "",
         createdBy = "",
@@ -213,7 +311,7 @@ class SubscriptionServiceTest {
       whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
 
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
-        endDate = updatedEndDate,
+        endDate = endDateInThePast,
       )
 
       val errorResponse = assertThrows<CustomException> {
@@ -221,7 +319,76 @@ class SubscriptionServiceTest {
       }
 
       assertThat(errorResponse.status).isEqualTo(HttpStatus.BAD_REQUEST)
-      assertThat(errorResponse.message).isEqualTo("Subscription end date is already set")
+      assertThat(errorResponse.message).isEqualTo("Subscription end date before start date")
+    }
+
+    @Test
+    fun `should throw exception if request is trying to set an start date after the end date`() {
+      val initialStartDate = LocalDate.now()
+      val startDateInTheFuture = LocalDate.now().plusDays(10)
+      val endDate = LocalDate.now().plusDays(1)
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = initialStartDate,
+        endDate = endDate,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = startDateInTheFuture,
+      )
+
+      val errorResponse = assertThrows<CustomException> {
+        subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+      }
+
+      assertThat(errorResponse.status).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(errorResponse.message).isEqualTo("Subscription end date before start date")
+    }
+
+    @Test
+    fun `should throw exception if trying to update the start date on already active subscription`() {
+      val initialStartDate = LocalDate.now().minusDays(1)
+      val endDate = LocalDate.now().plusWeeks(1)
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = initialStartDate,
+        endDate = endDate,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = initialStartDate.plusDays(1),
+      )
+
+      val errorResponse = assertThrows<CustomException> {
+        subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+      }
+
+      assertThat(errorResponse.status).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(errorResponse.message).isEqualTo("Subscription has already started - unable to update")
     }
   }
 

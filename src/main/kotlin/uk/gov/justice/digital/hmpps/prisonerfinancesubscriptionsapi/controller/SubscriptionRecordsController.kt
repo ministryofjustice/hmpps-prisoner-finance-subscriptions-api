@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionsStatus
@@ -174,6 +176,8 @@ class SubscriptionRecordsController(
     @PathVariable subscriptionId: UUID,
     @Valid @RequestBody updateSubscriptionRequest: UpdateSubscriptionRequest,
   ): ResponseEntity<SubscriptionResponse> {
+    if (updateSubscriptionRequest.isEmpty()) throw CustomException("No fields to update", HttpStatus.BAD_REQUEST)
+
     val updatedSubscriptionResponse = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
 
     return ResponseEntity.ok(updatedSubscriptionResponse)
