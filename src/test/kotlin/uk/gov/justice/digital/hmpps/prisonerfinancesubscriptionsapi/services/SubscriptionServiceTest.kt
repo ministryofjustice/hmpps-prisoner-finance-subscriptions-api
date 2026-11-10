@@ -144,17 +144,18 @@ class SubscriptionServiceTest {
     val updatedEndDate: LocalDate = LocalDate.now()
 
     @Test
-    fun `should return subscription entity once updated successfully`() {
+    fun `should return subscription entity once end date updated successfully`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = updatedEndDate,
       )
 
+      val startDate = LocalDate.now()
       val subscriptionEntity = SubscriptionEntity(
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
         dayOfPayment = DayOfWeek.MONDAY,
-        startDate = LocalDate.now(),
+        startDate = startDate,
         endDate = null,
         subscriptionType = "",
         reference = "",
@@ -173,6 +174,74 @@ class SubscriptionServiceTest {
       val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
 
       assertThat(response.endDate).isEqualTo(updatedEndDate)
+      assertThat(response.startDate).isEqualTo(startDate)
+    }
+
+    @Test
+    fun `should return subscription entity once start date updated successfully`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = LocalDate.now(),
+      )
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now().plusYears(180),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }
+        .thenAnswer { it.arguments[0] }
+
+      val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+      assertThat(response.startDate).isEqualTo(updateSubscriptionRequest.startDate)
+      assertThat(response.endDate).isNull()
+    }
+
+    @Test
+    fun `should return subscription entity once start date and end date updated successfully`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(10),
+      )
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now().plusYears(180),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }
+        .thenAnswer { it.arguments[0] }
+
+      val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+      assertThat(response.startDate).isEqualTo(updateSubscriptionRequest.startDate)
+      assertThat(response.endDate).isEqualTo(updateSubscriptionRequest.endDate)
     }
 
     @Test

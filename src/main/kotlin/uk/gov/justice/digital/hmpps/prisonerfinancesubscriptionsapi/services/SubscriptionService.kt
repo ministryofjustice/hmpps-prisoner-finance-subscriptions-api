@@ -41,11 +41,20 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
     val subscriptionEntity = subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId)
       ?: throw CustomException("Could not find subscription", HttpStatus.NOT_FOUND)
 
-    if (subscriptionEntity.endDate != null) {
-      throw CustomException("Subscription end date is already set", HttpStatus.BAD_REQUEST)
+    val endDateIsAlreadySet = subscriptionEntity.endDate != null
+
+    if (updateSubscriptionRequest.endDate != null) {
+      if (endDateIsAlreadySet) {
+        throw CustomException("Subscription end date is already set", HttpStatus.BAD_REQUEST)
+      } else {
+        subscriptionEntity.endDate = updateSubscriptionRequest.endDate
+      }
     }
 
-    subscriptionEntity.endDate = updateSubscriptionRequest.endDate
+    if (updateSubscriptionRequest.startDate != null) {
+      subscriptionEntity.startDate = updateSubscriptionRequest.startDate
+    }
+
     subscriptionsRepository.save(subscriptionEntity)
 
     return SubscriptionResponse.fromEntity(subscriptionEntity)
@@ -64,11 +73,13 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
 
     val subscriptions = when (status) {
       SubscriptionsStatus.ACTIVE -> subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pagedRequest)
+
       SubscriptionsStatus.INACTIVE -> subscriptionsRepository.getSubscriptionEntitiesByPrisonNumberAndEndDateIsBefore(
         prisonNumber = prisonNumber,
         endDate = LocalDate.now(),
         pageable = pagedRequest,
       )
+
       null -> subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(prisonNumber, pagedRequest)
     }
 
