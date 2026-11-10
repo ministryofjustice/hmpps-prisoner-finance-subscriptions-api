@@ -49,14 +49,22 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
       subscriptionEntity.endDate = updateSubscriptionRequest.endDate
     }
 
-    if (updateSubscriptionRequest.startDate != null) {
-      if (subscriptionEntity.startDate < LocalDate.now()) throw CustomException("Subscription has already started - unable to update", HttpStatus.BAD_REQUEST)
+    val expectedStartDate = updateSubscriptionRequest.startDate ?: subscriptionEntity.startDate
+    val expectedEndDate = updateSubscriptionRequest.endDate ?: subscriptionEntity.endDate
 
-      subscriptionEntity.startDate = updateSubscriptionRequest.startDate
+    if (expectedEndDate != null && expectedEndDate < expectedStartDate) {
+      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
     }
 
-    if (subscriptionEntity.endDate != null && subscriptionEntity.endDate!! < subscriptionEntity.startDate) {
-      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
+    if (updateSubscriptionRequest.startDate != null) {
+      val startDateIsBeingUpdated = subscriptionEntity.startDate != updateSubscriptionRequest.startDate
+      val startDateIsInThePast = subscriptionEntity.startDate < LocalDate.now()
+
+      if (startDateIsInThePast && startDateIsBeingUpdated) {
+        throw CustomException("Subscription has already started - unable to update", HttpStatus.BAD_REQUEST)
+      } else if (startDateIsBeingUpdated) {
+        subscriptionEntity.startDate = updateSubscriptionRequest.startDate
+      }
     }
 
     subscriptionsRepository.save(subscriptionEntity)
