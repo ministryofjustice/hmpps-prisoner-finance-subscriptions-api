@@ -23,6 +23,10 @@ import java.util.UUID
 class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepository, private val idempotencyRepository: IdempotencyKeyDataRepository) {
   @Transactional(rollbackOn = [Exception::class, Error::class])
   fun createSubscription(createSubscriptionRequest: CreateSubscriptionRequest, idempotencyKey: UUID): SubscriptionResponse {
+    if (createSubscriptionRequest.endDate != null && createSubscriptionRequest.endDate < createSubscriptionRequest.startDate) {
+      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
+    }
+
     val createdSubscription = subscriptionsRepository.saveAndFlush(createSubscriptionRequest.toEntity())
     idempotencyRepository.saveAndFlush(IdempotencyEntity(idempotencyKey, createdSubscription))
     return SubscriptionResponse.fromEntity(createdSubscription)
@@ -41,18 +45,18 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
     val subscriptionEntity = subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId)
       ?: throw CustomException("Could not find subscription", HttpStatus.NOT_FOUND)
 
-    val endDateIsAlreadySet = subscriptionEntity.endDate != null
-
     if (updateSubscriptionRequest.endDate != null) {
-      if (endDateIsAlreadySet) {
-        throw CustomException("Subscription end date is already set", HttpStatus.BAD_REQUEST)
-      } else {
-        subscriptionEntity.endDate = updateSubscriptionRequest.endDate
-      }
+      subscriptionEntity.endDate = updateSubscriptionRequest.endDate
     }
 
     if (updateSubscriptionRequest.startDate != null) {
+      if (subscriptionEntity.startDate < LocalDate.now()) throw CustomException("Subscription has already started - unable to update", HttpStatus.BAD_REQUEST)
+
       subscriptionEntity.startDate = updateSubscriptionRequest.startDate
+    }
+
+    if (subscriptionEntity.endDate != null && subscriptionEntity.endDate!! < subscriptionEntity.startDate) {
+      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
     }
 
     subscriptionsRepository.save(subscriptionEntity)

@@ -184,6 +184,36 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 400 if the start date is after the end date`() {
+      val createSubscriptionRequestWithoutLegacyPaymentProfileId = CreateSubscriptionRequest(
+        legacyPaymentProfileId = null,
+        amount = 50,
+        dayOfPayment = DayOfWeek.MONDAY,
+        startDate = LocalDate.now().plusYears(180),
+        endDate = LocalDate.now(),
+        subscriptionType = "TELE",
+        reference = "REF",
+        createdBy = "USER",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "AD12345",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      val idempotencyKey = UUID.randomUUID()
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .bodyValue(createSubscriptionRequestWithoutLegacyPaymentProfileId)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
     fun `should return 400 if given a malformed request body`() {
       // Incorrect data types on keys
       webTestClient.post().uri("/subscriptions")
@@ -448,14 +478,31 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when end date has already updated`() {
+    fun `should return 400 when end date is before the start date`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
-        endDate = LocalDate.now(),
+        endDate = subscriptionResponse.startDate.minusDays(7),
       )
 
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+    }
+
+    @Test
+    fun `should return 400 when start date is after the end date`() {
+      val updateEndDateRequest = UpdateSubscriptionRequest(
+        endDate = LocalDate.now().plusDays(2),
+      )
+      val updateStartDateRequest = UpdateSubscriptionRequest(
+        startDate = LocalDate.now().plusDays(7),
+
+      )
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateEndDateRequest)
         .exchange()
         .expectStatus()
         .isOk
@@ -465,10 +512,36 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateStartDateRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `should return 400 if the subscription has already started (start date is in the past)`() {
+      val activeSubscription = createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 545345345,
+        startDate = LocalDate.now().minusDays(1),
+      )
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = activeSubscription.startDate.minusDays(7),
+      )
+
+      webTestClient.post().uri("/subscriptions/${activeSubscription.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .bodyValue(updateSubscriptionRequest)
         .exchange()
         .expectStatus()
         .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
     }
 
     @Test
