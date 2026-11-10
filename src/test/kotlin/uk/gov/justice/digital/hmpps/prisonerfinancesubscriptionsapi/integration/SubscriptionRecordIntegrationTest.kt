@@ -184,13 +184,13 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 if the start date is after the end date`() {
+    fun `should return 400 if the subscription is created with an end date before the start date`() {
       val createSubscriptionRequestWithoutLegacyPaymentProfileId = CreateSubscriptionRequest(
         legacyPaymentProfileId = null,
         amount = 50,
         dayOfPayment = DayOfWeek.MONDAY,
         startDate = LocalDate.now().plusYears(180),
-        endDate = LocalDate.now(),
+        endDate = LocalDate.now().plusYears(1),
         subscriptionType = "TELE",
         reference = "REF",
         createdBy = "USER",
@@ -478,7 +478,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when end date is before the start date`() {
+    fun `should return 400 when trying to set end date before the start date`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = subscriptionResponse.startDate.minusDays(7),
       )
@@ -492,7 +492,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when start date is after the end date`() {
+    fun `should return 400 when trying to set start date after the end date`() {
       val updateEndDateRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now().plusDays(2),
       )
@@ -522,7 +522,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 if the subscription has already started (start date is in the past)`() {
+    fun `should return 400 when trying to update the start date if the subscription has already started `() {
       val activeSubscription = createSubscription(
         prisonNumber = prisonNumber,
         paymentProfileId = 545345345,
