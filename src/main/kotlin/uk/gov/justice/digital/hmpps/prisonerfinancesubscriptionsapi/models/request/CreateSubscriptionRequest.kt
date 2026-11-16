@@ -16,7 +16,7 @@ class CreateSubscriptionRequest(
   val dayOfPayment: DayOfWeek,
   @field:Schema(description = "The start date of the subscription", example = "2026-12-03", required = true)
   val startDate: LocalDate,
-  @field:Schema(description = "The end date of the subscription", example = "2026-13-04", required = false)
+  @field:Schema(description = "The end date of the subscription - must be after the start date if set", example = "2026-13-04", required = false)
   val endDate: LocalDate? = null,
   @field:Schema(description = "The transaction type for the payments", example = "TELE", required = true)
   val subscriptionType: String,
