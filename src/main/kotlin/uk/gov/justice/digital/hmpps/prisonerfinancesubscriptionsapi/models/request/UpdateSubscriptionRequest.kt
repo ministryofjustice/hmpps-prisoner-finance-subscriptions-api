@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.validators.ValidSubscriptionUpdateRequest
 import java.time.LocalDate
 
+@ValidSubscriptionUpdateRequest
 class UpdateSubscriptionRequest(
   @field:Schema(
     description = "The start date to set for the subscription. " +

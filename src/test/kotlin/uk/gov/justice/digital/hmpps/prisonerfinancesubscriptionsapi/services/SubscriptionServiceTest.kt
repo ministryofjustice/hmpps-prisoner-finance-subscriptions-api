@@ -359,14 +359,14 @@ class SubscriptionServiceTest {
 
     @Test
     fun `should throw exception if trying to update the start date on already active subscription`() {
-      val initialStartDate = LocalDate.now().minusDays(1)
+      val yesterday = LocalDate.now().minusDays(1)
       val endDate = LocalDate.now().plusWeeks(1)
       val subscriptionEntity = SubscriptionEntity(
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
         dayOfPayment = DayOfWeek.MONDAY,
-        startDate = initialStartDate,
+        startDate = yesterday,
         endDate = endDate,
         subscriptionType = "",
         reference = "",
@@ -378,9 +378,9 @@ class SubscriptionServiceTest {
       )
 
       whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
-
+      val nextWeek = yesterday.plusWeeks(1)
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
-        startDate = initialStartDate.plusDays(1),
+        startDate = nextWeek,
       )
 
       val errorResponse = assertThrows<CustomException> {

@@ -77,7 +77,10 @@ data class SubscriptionEntity(
   @Enumerated(EnumType.STRING)
   @Column(name = "sub_account_ref", nullable = false, unique = false)
   val subAccountRef: SubAccountRef,
-)
+) {
+  val hasStarted: Boolean
+    get() = startDate < LocalDate.now()
+}
 
 enum class SubAccountRef {
   CASH,

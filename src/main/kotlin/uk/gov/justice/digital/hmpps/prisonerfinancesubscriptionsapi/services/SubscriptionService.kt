@@ -45,31 +45,23 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
     val subscriptionEntity = subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId)
       ?: throw CustomException("Could not find subscription", HttpStatus.NOT_FOUND)
 
-    if (updateSubscriptionRequest.endDate != null) {
-      subscriptionEntity.endDate = updateSubscriptionRequest.endDate
-    }
+    val updatedStartDate = updateSubscriptionRequest.startDate ?: subscriptionEntity.startDate
+    val updatedEndDate = updateSubscriptionRequest.endDate ?: subscriptionEntity.endDate
+    val entityCopy = subscriptionEntity.copy(startDate = updatedStartDate, endDate = updatedEndDate)
 
-    val expectedStartDate = updateSubscriptionRequest.startDate ?: subscriptionEntity.startDate
-    val expectedEndDate = updateSubscriptionRequest.endDate ?: subscriptionEntity.endDate
-
-    if (expectedEndDate != null && expectedEndDate < expectedStartDate) {
+    val endDateIsBeingUpdated = entityCopy.endDate != null
+    if (endDateIsBeingUpdated && entityCopy.endDate!!.isBefore(entityCopy.startDate)) {
       throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
     }
 
-    if (updateSubscriptionRequest.startDate != null) {
-      val startDateIsBeingUpdated = subscriptionEntity.startDate != updateSubscriptionRequest.startDate
-      val startDateIsInThePast = subscriptionEntity.startDate < LocalDate.now()
-
-      if (startDateIsInThePast && startDateIsBeingUpdated) {
-        throw CustomException("Subscription has already started - unable to update", HttpStatus.BAD_REQUEST)
-      } else if (startDateIsBeingUpdated) {
-        subscriptionEntity.startDate = updateSubscriptionRequest.startDate
-      }
+    val startDateIsBeingUpdated = subscriptionEntity.startDate != updatedStartDate
+    if (subscriptionEntity.hasStarted && startDateIsBeingUpdated) {
+      throw CustomException("Subscription has already started - unable to update", HttpStatus.BAD_REQUEST)
     }
 
-    subscriptionsRepository.save(subscriptionEntity)
+    val updatedEntity = subscriptionsRepository.save(entityCopy)
 
-    return SubscriptionResponse.fromEntity(subscriptionEntity)
+    return SubscriptionResponse.fromEntity(updatedEntity)
   }
 
   fun getSubscriptions(prisonNumber: String, pageNumber: Int = 1, pageSize: Int = 25, status: SubscriptionsStatus? = null): PagedResponse<SubscriptionResponse> {

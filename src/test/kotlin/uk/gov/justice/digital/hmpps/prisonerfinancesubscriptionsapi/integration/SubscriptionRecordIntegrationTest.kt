@@ -545,6 +545,52 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `Should return 400 if the updated start date is in the past`() {
+      val activeSubscription = createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 545345345,
+        startDate = LocalDate.now().minusYears(1),
+      )
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        startDate = LocalDate.now().minusDays(30),
+      )
+
+      webTestClient.post().uri("/subscriptions/${activeSubscription.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `Should throw return 400 if the updated end date is in the past`() {
+      val activeSubscription = createSubscription(
+        prisonNumber = prisonNumber,
+        paymentProfileId = 545345345,
+        startDate = LocalDate.now().minusYears(1),
+      )
+
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = LocalDate.now().minusDays(7),
+      )
+
+      webTestClient.post().uri("/subscriptions/${activeSubscription.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
     fun `should return 400 when no fields to update provided`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest()
 
