@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.validators.ValidSubscriptionUpdateRequest
 import java.time.LocalDate
@@ -24,5 +25,7 @@ class UpdateSubscriptionRequest(
   val endDate: LocalDate? = null,
 ) {
 
+  @JsonIgnore
+  @Schema(hidden = true)
   fun isEmpty(): Boolean = this.endDate == null && this.startDate == null
 }
