@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.HttpMediaTypeNotSupportedException
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -52,7 +53,7 @@ class PrisonerFinanceSubscriptionsApiExceptionHandler {
       ),
     ).also { log.info("Validation exception: {}", e.message) }
 
-  @ExceptionHandler(ValidationException::class)
+  @ExceptionHandler(ValidationException::class, MethodArgumentNotValidException::class)
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(BAD_REQUEST)
     .body(

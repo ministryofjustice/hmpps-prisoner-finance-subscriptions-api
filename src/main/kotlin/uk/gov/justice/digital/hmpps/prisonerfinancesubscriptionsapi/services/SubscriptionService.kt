@@ -23,6 +23,10 @@ import java.util.UUID
 class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepository, private val idempotencyRepository: IdempotencyKeyDataRepository) {
   @Transactional(rollbackOn = [Exception::class, Error::class])
   fun createSubscription(createSubscriptionRequest: CreateSubscriptionRequest, idempotencyKey: UUID): SubscriptionResponse {
+    if (createSubscriptionRequest.endDate != null && createSubscriptionRequest.endDate < createSubscriptionRequest.startDate) {
+      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
+    }
+
     val createdSubscription = subscriptionsRepository.saveAndFlush(createSubscriptionRequest.toEntity())
     idempotencyRepository.saveAndFlush(IdempotencyEntity(idempotencyKey, createdSubscription))
     return SubscriptionResponse.fromEntity(createdSubscription)
@@ -41,14 +45,23 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
     val subscriptionEntity = subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId)
       ?: throw CustomException("Could not find subscription", HttpStatus.NOT_FOUND)
 
-    if (subscriptionEntity.endDate != null) {
-      throw CustomException("Subscription end date is already set", HttpStatus.BAD_REQUEST)
+    val updatedStartDate = updateSubscriptionRequest.startDate ?: subscriptionEntity.startDate
+    val updatedEndDate = updateSubscriptionRequest.endDate ?: subscriptionEntity.endDate
+    val entityCopy = subscriptionEntity.copy(startDate = updatedStartDate, endDate = updatedEndDate)
+
+    val endDateIsBeingUpdated = entityCopy.endDate != null
+    if (endDateIsBeingUpdated && entityCopy.endDate!!.isBefore(entityCopy.startDate)) {
+      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
     }
 
-    subscriptionEntity.endDate = updateSubscriptionRequest.endDate
-    subscriptionsRepository.save(subscriptionEntity)
+    val startDateIsBeingUpdated = subscriptionEntity.startDate != updatedStartDate
+    if (subscriptionEntity.hasStarted && startDateIsBeingUpdated) {
+      throw CustomException("Subscription has already started - unable to update", HttpStatus.BAD_REQUEST)
+    }
 
-    return SubscriptionResponse.fromEntity(subscriptionEntity)
+    val updatedEntity = subscriptionsRepository.save(entityCopy)
+
+    return SubscriptionResponse.fromEntity(updatedEntity)
   }
 
   fun getSubscriptions(prisonNumber: String, pageNumber: Int = 1, pageSize: Int = 25, status: SubscriptionsStatus? = null): PagedResponse<SubscriptionResponse> {
@@ -64,11 +77,13 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
 
     val subscriptions = when (status) {
       SubscriptionsStatus.ACTIVE -> subscriptionsRepository.getActiveSubscriptionsForPrisonNumber(prisonNumber, pagedRequest)
+
       SubscriptionsStatus.INACTIVE -> subscriptionsRepository.getSubscriptionEntitiesByPrisonNumberAndEndDateIsBefore(
         prisonNumber = prisonNumber,
         endDate = LocalDate.now(),
         pageable = pagedRequest,
       )
+
       null -> subscriptionsRepository.getSubscriptionEntitiesByPrisonNumber(prisonNumber, pagedRequest)
     }
 

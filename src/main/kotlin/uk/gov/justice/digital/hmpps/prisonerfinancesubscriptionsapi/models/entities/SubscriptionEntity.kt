@@ -43,9 +43,8 @@ data class SubscriptionEntity(
   @Column(name = "day_of_payment", nullable = false, unique = false)
   val dayOfPayment: DayOfWeek,
 
-  @Immutable
   @Column(name = "start_date", nullable = false, unique = false)
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   @Column(name = "end_date", nullable = true, unique = false)
   var endDate: LocalDate? = null,
@@ -78,7 +77,10 @@ data class SubscriptionEntity(
   @Enumerated(EnumType.STRING)
   @Column(name = "sub_account_ref", nullable = false, unique = false)
   val subAccountRef: SubAccountRef,
-)
+) {
+  val hasStarted: Boolean
+    get() = startDate < LocalDate.now()
+}
 
 enum class SubAccountRef {
   CASH,
