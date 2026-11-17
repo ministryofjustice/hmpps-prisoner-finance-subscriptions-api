@@ -138,7 +138,7 @@ class SubscriptionRecordsController(
       ApiResponse(
         responseCode = "200",
         description = "Update subscription",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountSubscriptionSummaryResponse::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = SubscriptionResponse::class))],
       ),
       ApiResponse(
         responseCode = "400",
