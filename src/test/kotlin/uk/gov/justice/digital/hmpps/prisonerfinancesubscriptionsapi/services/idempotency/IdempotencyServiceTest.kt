@@ -11,7 +11,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.services.IdempotencyService
 import java.time.Instant
@@ -47,7 +47,7 @@ class IdempotencyServiceTest {
         subscriptionId = UUID.randomUUID(),
         legacyPaymentProfileId = 123456,
         amount = 50L,
-        dayOfPayment = SubscriptionPaymentDay.MONDAY,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
         startDate = LocalDate.now(),
         endDate = LocalDate.now().plusDays(10),
         subscriptionType = "TELE",

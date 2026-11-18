@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.resp
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -15,8 +15,8 @@ data class SubscriptionResponse(
   val legacyPaymentProfileId: Long? = null,
   @field:Schema(description = "The amount paid weekly in pence", example = "50")
   val amount: Long,
-  @field:Schema(description = "The day the payment is made weekly", example = "MONDAY")
-  val dayOfPayment: SubscriptionPaymentDay,
+  @field:Schema(description = "The day or days the payment is made weekly", example = "MONDAY_TO_FRIDAY / TUESDAY")
+  val paymentSchedule: SubscriptionPaymentSchedule,
   @field:Schema(description = "The start date of the subscription", example = "2026-12-03")
   val startDate: LocalDate,
   @field:Schema(description = "The end date of the subscription", example = "2026-13-04")
@@ -41,7 +41,7 @@ data class SubscriptionResponse(
       id = subscriptionEntity.subscriptionId,
       legacyPaymentProfileId = subscriptionEntity.legacyPaymentProfileId,
       amount = subscriptionEntity.amount,
-      dayOfPayment = subscriptionEntity.dayOfPayment,
+      paymentSchedule = subscriptionEntity.paymentSchedule,
       startDate = subscriptionEntity.startDate,
       endDate = subscriptionEntity.endDate,
       subscriptionType = subscriptionEntity.subscriptionType,

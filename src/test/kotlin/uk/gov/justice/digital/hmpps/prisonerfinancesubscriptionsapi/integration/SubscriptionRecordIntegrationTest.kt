@@ -11,7 +11,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.AccountSubscriptionSummaryResponse
@@ -40,7 +40,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     val createSubscriptionRequest = CreateSubscriptionRequest(
       legacyPaymentProfileId = 123456789,
       amount = 50,
-      dayOfPayment = SubscriptionPaymentDay.MONDAY,
+      paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
       startDate = LocalDate.now(),
       endDate = null,
       subscriptionType = "TELE",
@@ -69,7 +69,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(response.id).isNotNull
       assertThat(response.legacyPaymentProfileId).isEqualTo(123456789)
       assertThat(response.amount).isEqualTo(50)
-      assertThat(response.dayOfPayment).isEqualTo(SubscriptionPaymentDay.MONDAY)
+      assertThat(response.paymentSchedule).isEqualTo(SubscriptionPaymentSchedule.MONDAY)
       assertThat(response.startDate).isEqualTo(LocalDate.now())
       assertThat(response.endDate).isNull()
       assertThat(response.subscriptionType).isEqualTo("TELE")
@@ -88,7 +88,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val createSubscriptionRequest = CreateSubscriptionRequest(
         legacyPaymentProfileId = 123456789,
         amount = 50,
-        dayOfPayment = SubscriptionPaymentDay.MONDAY_TO_FRIDAY,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY_TO_FRIDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "TELE",
@@ -114,7 +114,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(response.id).isNotNull
       assertThat(response.legacyPaymentProfileId).isEqualTo(123456789)
       assertThat(response.amount).isEqualTo(50)
-      assertThat(response.dayOfPayment).isEqualTo(SubscriptionPaymentDay.MONDAY_TO_FRIDAY)
+      assertThat(response.paymentSchedule).isEqualTo(SubscriptionPaymentSchedule.MONDAY_TO_FRIDAY)
     }
 
     @Test
@@ -146,7 +146,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       assertThat(responseOne.id).isEqualTo(responseTwo.id)
       assertThat(responseOne.legacyPaymentProfileId).isEqualTo(responseTwo.legacyPaymentProfileId)
       assertThat(responseOne.amount).isEqualTo(responseTwo.amount)
-      assertThat(responseOne.dayOfPayment).isEqualTo(responseTwo.dayOfPayment)
+      assertThat(responseOne.paymentSchedule).isEqualTo(responseTwo.paymentSchedule)
       assertThat(responseOne.startDate).isEqualTo(responseTwo.startDate)
       assertThat(responseOne.endDate).isEqualTo(responseTwo.endDate)
       assertThat(responseOne.subscriptionType).isEqualTo(responseTwo.subscriptionType)
@@ -191,7 +191,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val createSubscriptionRequestWithoutLegacyPaymentProfileId = CreateSubscriptionRequest(
         legacyPaymentProfileId = null,
         amount = 50,
-        dayOfPayment = SubscriptionPaymentDay.MONDAY,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "TELE",
@@ -224,7 +224,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val createSubscriptionRequestWithoutLegacyPaymentProfileId = CreateSubscriptionRequest(
         legacyPaymentProfileId = null,
         amount = 50,
-        dayOfPayment = SubscriptionPaymentDay.MONDAY,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
         startDate = LocalDate.now().plusYears(180),
         endDate = LocalDate.now().plusYears(1),
         subscriptionType = "TELE",
@@ -356,7 +356,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
         legacyPaymentProfileId = 123456788,
         amount = 100,
-        dayOfPayment = SubscriptionPaymentDay.MONDAY,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "TELE",
@@ -371,7 +371,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val secondCreateSubscriptionRequest = CreateSubscriptionRequest(
         legacyPaymentProfileId = 123456789,
         amount = 150,
-        dayOfPayment = SubscriptionPaymentDay.MONDAY,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "TELE",
