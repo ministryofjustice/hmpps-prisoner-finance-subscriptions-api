@@ -8,6 +8,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.Immutable
+import org.hibernate.envers.AuditTable
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
 import java.time.Instant
 import java.time.LocalDate
@@ -23,6 +25,8 @@ import java.util.UUID
     ),
   ],
 )
+@Audited
+@AuditTable(value = "subscriptions_aud")
 data class SubscriptionEntity(
 
   @Id
