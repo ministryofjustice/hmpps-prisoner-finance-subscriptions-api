@@ -12,6 +12,32 @@ services:
       - SERVER_PORT=8080
       - HMPPS_AUTH_URL=http://hmpps-auth:8080/auth
       - SPRING_PROFILES_ACTIVE=dev
+      - DB_SERVER=hmpps-prisoner-finance-subscriptions-db
+    depends_on:
+      hmpps-auth:
+        condition: service_started
+      hmpps-prisoner-finance-subscriptions-db:
+        condition: service_healthy
+        restart: true
+
+
+  hmpps-prisoner-finance-subscriptions-db:
+    container_name: hmpps-prisoner-finance-subscriptions-db
+    image: postgres:16.15
+    restart: always
+    networks:
+      - hmpps
+    ports:
+      - "5437:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=subscriptions
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   hmpps-auth:
     image: ghcr.io/ministryofjustice/hmpps-auth:latest
