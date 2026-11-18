@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.requ
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
-import java.time.DayOfWeek
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
 import java.time.Instant
 import java.time.LocalDate
 
@@ -13,7 +13,7 @@ class CreateSubscriptionRequest(
   @field:Schema(description = "The amount paid weekly in pence", example = "50", required = true)
   val amount: Long,
   @field:Schema(description = "The day the payment is made weekly", example = "MONDAY", required = true)
-  val dayOfPayment: DayOfWeek,
+  val dayOfPayment: SubscriptionPaymentDay,
   @field:Schema(description = "The start date of the subscription", example = "2026-12-03", required = true)
   val startDate: LocalDate,
   @field:Schema(description = "The end date of the subscription - must be after the start date if set", example = "2026-13-04", required = false)

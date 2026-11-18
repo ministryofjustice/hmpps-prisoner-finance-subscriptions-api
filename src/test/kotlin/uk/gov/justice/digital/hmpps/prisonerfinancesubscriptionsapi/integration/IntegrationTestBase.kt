@@ -18,11 +18,11 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -81,7 +81,7 @@ abstract class IntegrationTestBase {
     val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
       legacyPaymentProfileId = paymentProfileId,
       amount = 100,
-      dayOfPayment = DayOfWeek.MONDAY,
+      dayOfPayment = SubscriptionPaymentDay.MONDAY,
       startDate = startDate,
       endDate = endDate,
       subscriptionType = "TELE",

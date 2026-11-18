@@ -8,7 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.Immutable
-import java.time.DayOfWeek
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -41,7 +41,7 @@ data class SubscriptionEntity(
   @Immutable
   @Enumerated(EnumType.STRING)
   @Column(name = "day_of_payment", nullable = false, unique = false)
-  val dayOfPayment: DayOfWeek,
+  val dayOfPayment: SubscriptionPaymentDay,
 
   @Column(name = "start_date", nullable = false, unique = false)
   var startDate: LocalDate,

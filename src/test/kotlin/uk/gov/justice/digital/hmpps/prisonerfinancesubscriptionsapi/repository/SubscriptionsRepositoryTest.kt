@@ -12,8 +12,8 @@ import org.springframework.data.domain.PageRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.SubscriptionsRepository
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -41,7 +41,7 @@ class SubscriptionsRepositoryTest @Autowired constructor(
       subscriptionId = UUID.randomUUID(),
       legacyPaymentProfileId = legacyPaymentProfileId,
       amount = 1,
-      dayOfPayment = DayOfWeek.MONDAY,
+      dayOfPayment = SubscriptionPaymentDay.MONDAY,
       startDate = startDate,
       endDate = endDate,
       subscriptionType = "",
