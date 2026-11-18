@@ -22,13 +22,13 @@ import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.Custo
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentDay
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionsStatus
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.repositories.SubscriptionsRepository
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -51,7 +51,7 @@ class SubscriptionServiceTest {
     val createSubscriptionRequest = CreateSubscriptionRequest(
       legacyPaymentProfileId = 123456,
       amount = 50L,
-      dayOfPayment = DayOfWeek.MONDAY,
+      dayOfPayment = SubscriptionPaymentDay.MONDAY,
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusDays(10),
       subscriptionType = "TELE",
@@ -110,7 +110,7 @@ class SubscriptionServiceTest {
       val invalidCreateSubscriptionRequest = CreateSubscriptionRequest(
         legacyPaymentProfileId = 123456,
         amount = 50L,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = startDate.plusYears(180),
         endDate = startDate.plusDays(10),
         subscriptionType = "TELE",
@@ -141,7 +141,7 @@ class SubscriptionServiceTest {
         subscriptionId = UUID.randomUUID(),
         legacyPaymentProfileId = 12345L,
         amount = 10,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = LocalDate.now(),
         endDate = LocalDate.now().plusDays(1),
         subscriptionType = "",
@@ -181,7 +181,7 @@ class SubscriptionServiceTest {
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = startDate,
         endDate = null,
         subscriptionType = "",
@@ -214,7 +214,7 @@ class SubscriptionServiceTest {
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = LocalDate.now().plusYears(180),
         endDate = null,
         subscriptionType = "",
@@ -248,7 +248,7 @@ class SubscriptionServiceTest {
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = LocalDate.now().plusYears(180),
         endDate = null,
         subscriptionType = "",
@@ -296,7 +296,7 @@ class SubscriptionServiceTest {
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = startDate,
         endDate = null,
         subscriptionType = "",
@@ -331,7 +331,7 @@ class SubscriptionServiceTest {
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = initialStartDate,
         endDate = endDate,
         subscriptionType = "",
@@ -365,7 +365,7 @@ class SubscriptionServiceTest {
         subscriptionId = subscriptionId,
         legacyPaymentProfileId = 1234,
         amount = 50,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = yesterday,
         endDate = endDate,
         subscriptionType = "",
@@ -405,7 +405,7 @@ class SubscriptionServiceTest {
         subscriptionId = UUID.randomUUID(),
         legacyPaymentProfileId = 12345,
         amount = 10,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "",
@@ -447,7 +447,7 @@ class SubscriptionServiceTest {
         subscriptionId = UUID.randomUUID(),
         legacyPaymentProfileId = 12345,
         amount = 10,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "",
@@ -489,7 +489,7 @@ class SubscriptionServiceTest {
         subscriptionId = UUID.randomUUID(),
         legacyPaymentProfileId = 12345,
         amount = 10,
-        dayOfPayment = DayOfWeek.MONDAY,
+        dayOfPayment = SubscriptionPaymentDay.MONDAY,
         startDate = LocalDate.now(),
         endDate = null,
         subscriptionType = "",
