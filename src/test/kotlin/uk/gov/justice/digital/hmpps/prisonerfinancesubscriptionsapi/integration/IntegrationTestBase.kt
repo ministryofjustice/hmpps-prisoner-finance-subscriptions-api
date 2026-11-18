@@ -13,8 +13,6 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.GeneralLedgerApiExtension.Companion.generalLedgerApi
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
@@ -27,7 +25,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
-@ExtendWith(HmppsAuthApiExtension::class, GeneralLedgerApiExtension::class)
+@ExtendWith(HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
 @Import(ContainersConfig::class, IntegrationTestHelpers::class)
@@ -49,9 +47,8 @@ abstract class IntegrationTestBase {
     scopes: List<String> = listOf("read"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisationHeader(username = username, scope = scopes, roles = roles)
 
-  protected fun stubPingWithResponse(status: Int, statusGeneralLedger: Int) {
+  protected fun stubPingWithResponse(status: Int) {
     hmppsAuth.stubHealthPing(status)
-    generalLedgerApi.stubHealthPing(statusGeneralLedger)
   }
 
   fun updateSubscription(subscriptionId: UUID, endDate: LocalDate): SubscriptionResponse {
