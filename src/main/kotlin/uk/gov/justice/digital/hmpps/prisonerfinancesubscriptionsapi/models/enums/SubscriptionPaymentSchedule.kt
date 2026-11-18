@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums
 
-enum class SubscriptionPaymentDay {
+enum class SubscriptionPaymentSchedule {
   MONDAY,
   TUESDAY,
   WEDNESDAY,
