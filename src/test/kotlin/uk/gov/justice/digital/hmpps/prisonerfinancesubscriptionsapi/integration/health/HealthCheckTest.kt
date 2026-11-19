@@ -1,15 +1,13 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.health
 
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.IntegrationTestBase
 
 class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Health page reports ok`() {
-    stubPingWithResponse(200, 200)
+    stubPingWithResponse(200)
 
     webTestClient.get()
       .uri("/health")
@@ -19,17 +17,11 @@ class HealthCheckTest : IntegrationTestBase() {
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
       .jsonPath("components.hmppsAuth.status").isEqualTo("UP")
-      .jsonPath("components.generalLedgerApi.status").isEqualTo("UP")
   }
 
-  @ParameterizedTest
-  @CsvSource(
-    "200, 503, UP, DOWN",
-    "503, 200, DOWN, UP",
-    "503, 503, DOWN, DOWN",
-  )
-  fun `Health page reports down`(statusAuth: Int, statusGeneralLedger: Int, expectedAuthStatus: String, expectedGeneralLedgerStatus: String) {
-    stubPingWithResponse(statusAuth, statusGeneralLedger)
+  @Test
+  fun `Health page reports down`() {
+    stubPingWithResponse(503)
     webTestClient.get()
       .uri("/health")
       .exchange()
@@ -37,8 +29,7 @@ class HealthCheckTest : IntegrationTestBase() {
       .is5xxServerError
       .expectBody()
       .jsonPath("status").isEqualTo("DOWN")
-      .jsonPath("components.hmppsAuth.status").isEqualTo(expectedAuthStatus)
-      .jsonPath("components.generalLedgerApi.status").isEqualTo(expectedGeneralLedgerStatus)
+      .jsonPath("components.hmppsAuth.status").isEqualTo("DOWN")
   }
 
   @Test
