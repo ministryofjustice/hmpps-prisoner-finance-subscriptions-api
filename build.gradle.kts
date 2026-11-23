@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.15"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.1.1"
   kotlin("plugin.spring") version "2.4.21"
   id("org.jetbrains.kotlin.plugin.noarg") version "2.4.21"
   id("jacoco")
@@ -38,6 +38,9 @@ dependencies {
   testImplementation("org.testcontainers:postgresql:1.21.4")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+
+// Addresses CVE
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }
 
 kotlin {
