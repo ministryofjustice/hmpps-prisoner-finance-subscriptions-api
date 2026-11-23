@@ -23,9 +23,23 @@ class UpdateSubscriptionRequest(
     required = false,
   )
   val endDate: LocalDate? = null,
+
+  @field:Schema(
+    description = "The comment to set for the subscription",
+    example = "This is a comment",
+    required = false,
+  )
+  val comment: String? = null,
+
+  @field:Schema(
+    description = "The user name that updated the record.",
+    example = "A739XY",
+    required = true,
+  )
+  val updatedBy: String,
 ) {
 
   @JsonIgnore
   @Schema(hidden = true)
-  fun isEmpty(): Boolean = this.endDate == null && this.startDate == null
+  fun isEmpty(): Boolean = this.endDate == null && this.startDate == null && this.comment == null
 }

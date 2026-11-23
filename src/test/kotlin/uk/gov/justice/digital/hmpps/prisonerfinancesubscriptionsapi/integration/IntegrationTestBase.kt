@@ -51,9 +51,10 @@ abstract class IntegrationTestBase {
     hmppsAuth.stubHealthPing(status)
   }
 
-  fun updateSubscription(subscriptionId: UUID, endDate: LocalDate): SubscriptionResponse {
+  fun updateSubscription(subscriptionId: UUID, endDate: LocalDate, updatedBy: String = "UPDATED_USER"): SubscriptionResponse {
     val updateSubscriptionRequest: UpdateSubscriptionRequest = UpdateSubscriptionRequest(
       endDate = endDate,
+      updatedBy = updatedBy,
     )
 
     val updatedResponse = webTestClient.post().uri("/subscriptions/$subscriptionId/update")
