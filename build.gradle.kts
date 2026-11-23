@@ -38,9 +38,6 @@ dependencies {
   testImplementation("org.testcontainers:postgresql:1.21.4")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-
-// Addresses CVE
-  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }
 
 kotlin {
