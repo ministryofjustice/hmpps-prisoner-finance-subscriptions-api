@@ -33,7 +33,7 @@ class UpdateSubscriptionRequest(
 
   @field:Schema(
     description = "The user name that updated the record.",
-    example = "A739XY",
+    example = "A739XYY",
     required = true,
   )
   val updatedBy: String,
