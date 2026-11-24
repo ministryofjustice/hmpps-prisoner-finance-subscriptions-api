@@ -58,6 +58,8 @@ generic-service:
   #   [name of kubernetes secret]:
   #     [name of environment variable as seen by app]: [key of kubernetes secret to load]
 
+  serviceAccountName: 'hmpps-prisoner-finance-subscriptions'
+
   namespace_secrets:
     hmpps-prisoner-finance-subscriptions-api-application-insights:
       APPLICATIONINSIGHTS_CONNECTION_STRING: "APPLICATIONINSIGHTS_CONNECTION_STRING"
@@ -67,6 +69,12 @@ generic-service:
       DB_NAME: "database_name"
       DB_USER: "database_username"
       DB_PASS: "database_password"
+
+    domain-events-prisoner-finance-queue-subscriptions-api:
+      HMPPS_SQS_QUEUES_DOMAINEVENTS_QUEUE_NAME: "sqs_queue_name"
+
+    domain-events-prisoner-finance-dlq-subscriptions-api:
+      HMPPS_SQS_QUEUES_DOMAINEVENTS_DLQ_NAME: "sqs_queue_name"
 
 generic-prometheus-alerts:
   targetApplication: hmpps-prisoner-finance-subscriptions-api

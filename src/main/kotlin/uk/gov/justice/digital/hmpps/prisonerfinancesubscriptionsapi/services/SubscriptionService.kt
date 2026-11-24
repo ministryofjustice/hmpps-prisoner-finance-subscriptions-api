@@ -92,4 +92,15 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
       content.map { SubscriptionResponse.fromEntity(it) }
     }
   }
+
+  fun merge(survivedPrisonNumber: String, removedPrisonNumber: String) {
+    val subscriptions = subscriptionsRepository.findByPrisonNumber(removedPrisonNumber)
+
+    subscriptions.forEach {
+      it.prisonNumber = survivedPrisonNumber
+      it.updatedBy = "DPS-Merge-Event"
+    }
+
+    subscriptionsRepository.saveAll(subscriptions)
+  }
 }

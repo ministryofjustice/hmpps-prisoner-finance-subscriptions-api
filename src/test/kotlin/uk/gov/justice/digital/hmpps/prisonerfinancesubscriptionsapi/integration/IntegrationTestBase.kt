@@ -9,24 +9,17 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.ContainersConfig
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.UpdateSubscriptionRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.response.SubscriptionResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
-import java.time.Instant
-import java.time.LocalDate
-import java.util.UUID
 
 @ExtendWith(HmppsAuthApiExtension::class)
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(
+  webEnvironment = RANDOM_PORT,
+  properties = ["spring.autoconfigure.exclude=uk.gov.justice.hmpps.sqs.HmppsSqsConfiguration"],
+)
 @ActiveProfiles("test")
 @Import(ContainersConfig::class, IntegrationTestHelpers::class)
 @AutoConfigureWebTestClient
@@ -49,64 +42,5 @@ abstract class IntegrationTestBase {
 
   protected fun stubPingWithResponse(status: Int) {
     hmppsAuth.stubHealthPing(status)
-  }
-
-  fun updateSubscription(subscriptionId: UUID, endDate: LocalDate, updatedBy: String = "UPDATED_USER"): SubscriptionResponse {
-    val updateSubscriptionRequest: UpdateSubscriptionRequest = UpdateSubscriptionRequest(
-      endDate = endDate,
-      updatedBy = updatedBy,
-    )
-
-    val updatedResponse = webTestClient.post().uri("/subscriptions/$subscriptionId/update")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-      .bodyValue(updateSubscriptionRequest)
-      .exchange()
-      .expectStatus()
-      .isOk
-      .expectBody<SubscriptionResponse>()
-      .returnResult()
-      .responseBody!!
-
-    return updatedResponse
-  }
-
-  fun createSubscription(
-    prisonNumber: String,
-    paymentProfileId: Long,
-    startDate: LocalDate = LocalDate.now(),
-    endDate: LocalDate? = null,
-  ): SubscriptionResponse {
-    val firstCreateSubscriptionRequest = CreateSubscriptionRequest(
-      legacyPaymentProfileId = paymentProfileId,
-      amount = 100,
-      paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
-      startDate = startDate,
-      endDate = endDate,
-      subscriptionType = "TELE",
-      reference = "REF",
-      createdBy = "USER",
-      createdAt = Instant.now(),
-      prisonId = "LEI",
-      prisonNumber = prisonNumber,
-      subAccountRef = SubAccountRef.CASH,
-    )
-
-    val subscriptionResponse = webTestClient.post().uri("/subscriptions")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-      .headers(setIdempotencyKey(UUID.randomUUID()))
-      .bodyValue(firstCreateSubscriptionRequest)
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody<SubscriptionResponse>()
-      .returnResult()
-      .responseBody!!
-
-    return subscriptionResponse
-  }
-
-  companion object {
-    fun setIdempotencyKey(
-      key: UUID,
-    ): (HttpHeaders) -> Unit = { it.set("Idempotency-Key", key.toString()) }
   }
 }

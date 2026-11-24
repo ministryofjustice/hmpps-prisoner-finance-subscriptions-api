@@ -75,7 +75,7 @@ data class SubscriptionEntity(
 
   @Immutable
   @Column(name = "prison_number", nullable = false, unique = false)
-  val prisonNumber: String,
+  var prisonNumber: String,
 
   @Immutable
   @Enumerated(EnumType.STRING)
@@ -86,7 +86,7 @@ data class SubscriptionEntity(
   val comment: String? = null,
 
   @Column(name = "updated_by", nullable = true, unique = false)
-  val updatedBy: String? = null,
+  var updatedBy: String? = null,
 
 ) {
   val hasStarted: Boolean

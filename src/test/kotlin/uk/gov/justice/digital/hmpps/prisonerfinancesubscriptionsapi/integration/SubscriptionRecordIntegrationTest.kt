@@ -10,6 +10,8 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.config.ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers
+import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.integration.helpers.IntegrationTestHelpers.Companion.setIdempotencyKey
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request.CreateSubscriptionRequest
@@ -57,7 +59,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val idempotencyKey = UUID.randomUUID()
       val response = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()
@@ -102,7 +104,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val response = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()
@@ -123,7 +125,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val responseOne = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()
@@ -134,7 +136,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val responseTwo = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()
@@ -163,7 +165,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val responseOne = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()
@@ -174,7 +176,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val responseTwo = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequest)
         .exchange()
         .expectStatus()
@@ -206,7 +208,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val idempotencyKey = UUID.randomUUID()
       val response = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequestWithoutLegacyPaymentProfileId)
         .exchange()
         .expectStatus()
@@ -239,7 +241,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val idempotencyKey = UUID.randomUUID()
       webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(setIdempotencyKey(idempotencyKey))
+        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequestWithoutLegacyPaymentProfileId)
         .exchange()
         .expectStatus()
@@ -456,7 +458,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setup() {
-      subscriptionResponse = createSubscription(prisonNumber, 123456788)
+      subscriptionResponse = integrationTestHelpers.createSubscription(prisonNumber, 123456788)
     }
 
     @Test
@@ -585,7 +587,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `should return 400 when trying to update the start date if the subscription has already started `() {
-      val activeSubscription = createSubscription(
+      val activeSubscription = integrationTestHelpers.createSubscription(
         prisonNumber = prisonNumber,
         paymentProfileId = 545345345,
         startDate = LocalDate.now().minusDays(1),
@@ -609,7 +611,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `Should return 400 if the updated start date is in the past`() {
-      val activeSubscription = createSubscription(
+      val activeSubscription = integrationTestHelpers.createSubscription(
         prisonNumber = prisonNumber,
         paymentProfileId = 545345345,
         startDate = LocalDate.now().minusYears(1),
@@ -633,7 +635,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `Should throw return 400 if the updated end date is in the past`() {
-      val activeSubscription = createSubscription(
+      val activeSubscription = integrationTestHelpers.createSubscription(
         prisonNumber = prisonNumber,
         paymentProfileId = 545345345,
         startDate = LocalDate.now().minusYears(1),
@@ -751,7 +753,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     @CsvSource("ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RO", "ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW")
     fun `should return 200 and a list of all subscriptions paged when filter not supplied`(role: String) {
       repeat(3) { i ->
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = i.toLong(),
           startDate = LocalDate.now(),
@@ -760,7 +762,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       }
 
       repeat(3) { i ->
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = 3 + i.toLong(),
           startDate = LocalDate.now().minusWeeks(2),
@@ -783,7 +785,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 200 and a list of active subscriptions paged when filter is supplied`() {
       repeat(3) { i ->
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = i.toLong(),
           startDate = LocalDate.now(),
@@ -792,7 +794,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       }
 
       repeat(3) { i ->
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = 3 + i.toLong(),
           startDate = LocalDate.now().minusWeeks(2),
@@ -800,7 +802,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         )
       }
 
-      createSubscription(
+      integrationTestHelpers.createSubscription(
         prisonNumber = prisonNumber,
         paymentProfileId = 7,
         startDate = LocalDate.now().minusWeeks(1),
@@ -822,7 +824,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 200 and a list of inactive subscriptions paged when filter is supplied`() {
       repeat(3) { i ->
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = i.toLong(),
           startDate = LocalDate.now(),
@@ -831,7 +833,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       }
 
       repeat(3) { i ->
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = 3 + i.toLong(),
           startDate = LocalDate.now().minusWeeks(2),
@@ -839,7 +841,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         )
       }
 
-      createSubscription(
+      integrationTestHelpers.createSubscription(
         prisonNumber = prisonNumber,
         paymentProfileId = 7,
         startDate = LocalDate.now().minusWeeks(1),
@@ -885,7 +887,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
         startDates.add(randomStartDate)
 
-        createSubscription(
+        integrationTestHelpers.createSubscription(
           prisonNumber = prisonNumber,
           paymentProfileId = i.toLong(),
           startDate = randomStartDate,
@@ -911,7 +913,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should get second page of results of subscriptions`() {
       repeat(25) { i ->
-        createSubscription(prisonNumber, i.toLong())
+        integrationTestHelpers.createSubscription(prisonNumber, i.toLong())
       }
 
       val responseBody = webTestClient.get().uri("/subscriptions/account/$prisonNumber?pageSize=24&pageNumber=2")
