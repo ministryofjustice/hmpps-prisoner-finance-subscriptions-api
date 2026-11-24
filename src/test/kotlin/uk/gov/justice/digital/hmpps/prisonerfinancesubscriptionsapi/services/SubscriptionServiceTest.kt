@@ -570,4 +570,64 @@ class SubscriptionServiceTest {
       assertThat(capturedPage.pageSize).isEqualTo(25)
     }
   }
+
+  @Nested
+  inner class MergeSubscriptions {
+    private val survivedPrisonNumber = "A123AA"
+    private val mergedPrisonNumber = "X999ZX"
+
+    @Test
+    fun `should merge holds by prisonNumber`() {
+      val mockSubscriptions = listOf(
+        SubscriptionEntity(
+          legacyPaymentProfileId = 123,
+          amount = 110,
+          paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusDays(14),
+          subscriptionType = "TELE",
+          reference = "",
+          createdBy = "TEST",
+          createdAt = Instant.now(),
+          prisonId = "LEI",
+          prisonNumber = mergedPrisonNumber,
+          subAccountRef = SubAccountRef.CASH,
+          comment = "",
+          updatedBy = null,
+        ),
+        SubscriptionEntity(
+          legacyPaymentProfileId = 122,
+          amount = 105,
+          paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusDays(14),
+          subscriptionType = "NEWSPAPER",
+          reference = "",
+          createdBy = "TEST",
+          createdAt = Instant.now(),
+          prisonId = "LEI",
+          prisonNumber = mergedPrisonNumber,
+          subAccountRef = SubAccountRef.CASH,
+          comment = "",
+          updatedBy = null,
+        ),
+      )
+
+      whenever {
+        subscriptionsRepository.findByPrisonNumber(mergedPrisonNumber)
+      }.thenReturn(mockSubscriptions)
+
+      val entityUpdateCaptor = argumentCaptor<List<SubscriptionEntity>>()
+
+      whenever { subscriptionsRepository.saveAll(entityUpdateCaptor.capture()) }.thenAnswer { it.arguments[0] }
+
+      subscriptionService.merge(survivedPrisonNumber, mergedPrisonNumber)
+
+      entityUpdateCaptor.firstValue.withIndex().forEach { (i, subscription) ->
+        assertThat(mockSubscriptions[i].subscriptionId).isEqualTo(subscription.subscriptionId)
+        assertThat(subscription.prisonNumber).isEqualTo(survivedPrisonNumber)
+        assertThat(subscription.updatedBy).isEqualTo("DPS-Merge-Event")
+      }
+    }
+  }
 }

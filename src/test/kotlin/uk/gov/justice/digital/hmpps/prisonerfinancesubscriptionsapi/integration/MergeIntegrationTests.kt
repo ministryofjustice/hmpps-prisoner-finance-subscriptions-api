@@ -24,10 +24,10 @@ class MergeIntegrationTests : SqsIntegrationTestBase() {
       endDate = null,
     )
 
-    val prisonerSubscriptionToBeMerged = integrationTestHelpers.getSubscriptions(mergedPrisonNumber)
-    assertThat(prisonerSubscriptionToBeMerged.content).hasSize(1)
-    assertThat(prisonerSubscriptionToBeMerged.content[0].prisonNumber).isEqualTo(createdSubscription.prisonNumber)
-    assertThat(prisonerSubscriptionToBeMerged.content[0].id).isEqualTo(createdSubscription.id)
+    val prisonerSubscriptionsToBeMerged = integrationTestHelpers.getSubscriptions(mergedPrisonNumber)
+    assertThat(prisonerSubscriptionsToBeMerged.content).hasSize(1)
+    assertThat(prisonerSubscriptionsToBeMerged.content[0].prisonNumber).isEqualTo(createdSubscription.prisonNumber)
+    assertThat(prisonerSubscriptionsToBeMerged.content[0].id).isEqualTo(createdSubscription.id)
 
     val survivingPrisonerSubscriptionsPreMerge = integrationTestHelpers.getSubscriptions(survivorPrisonNumber)
     assertThat(survivingPrisonerSubscriptionsPreMerge.content).hasSize(0)
@@ -36,12 +36,12 @@ class MergeIntegrationTests : SqsIntegrationTestBase() {
 
     waitUntilEmpty(hmppsQueueService = hmppsQueueService)
 
-    val mergedPrisonerSubscription = integrationTestHelpers.getSubscriptions(mergedPrisonNumber)
-    assertThat(mergedPrisonerSubscription.content).hasSize(0)
+    val mergedPrisonerSubscriptions = integrationTestHelpers.getSubscriptions(mergedPrisonNumber)
+    assertThat(mergedPrisonerSubscriptions.content).hasSize(0)
 
-    val survivingPrisonerSubscription = integrationTestHelpers.getSubscriptions(survivorPrisonNumber)
-    assertThat(survivingPrisonerSubscription.content).hasSize(1)
-    assertThat(survivingPrisonerSubscription.content[0].prisonNumber).isEqualTo(survivorPrisonNumber)
-    assertThat(survivingPrisonerSubscription.content[0].id).isEqualTo(createdSubscription.id)
+    val survivingPrisonerSubscriptions = integrationTestHelpers.getSubscriptions(survivorPrisonNumber)
+    assertThat(survivingPrisonerSubscriptions.content).hasSize(1)
+    assertThat(survivingPrisonerSubscriptions.content[0].prisonNumber).isEqualTo(survivorPrisonNumber)
+    assertThat(survivingPrisonerSubscriptions.content[0].id).isEqualTo(createdSubscription.id)
   }
 }

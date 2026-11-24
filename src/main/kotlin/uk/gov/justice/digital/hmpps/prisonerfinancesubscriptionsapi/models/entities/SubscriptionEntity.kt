@@ -73,7 +73,6 @@ data class SubscriptionEntity(
   @Column(name = "prison_id", nullable = false, unique = false)
   val prisonId: String,
 
-  @Immutable
   @Column(name = "prison_number", nullable = false, unique = false)
   var prisonNumber: String,
 
