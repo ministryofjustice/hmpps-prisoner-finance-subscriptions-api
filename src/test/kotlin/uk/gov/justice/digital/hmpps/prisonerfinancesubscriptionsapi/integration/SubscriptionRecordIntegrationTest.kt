@@ -450,6 +450,8 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
   @Nested
   inner class UpdateSubscription {
 
+    val updatedUser = "UPDATED_USER"
+
     lateinit var subscriptionResponse: SubscriptionResponse
 
     @BeforeEach
@@ -461,6 +463,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     fun `should update subscription with end date and return 200`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now(),
+        updatedBy = updatedUser,
       )
       val updatedResponse = webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -479,6 +482,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     fun `should update subscription with start date and return 200`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = LocalDate.now().plusDays(7),
+        updatedBy = updatedUser,
       )
       val updatedResponse = webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -498,6 +502,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = LocalDate.now().plusDays(7),
         endDate = LocalDate.now().plusDays(14),
+        updatedBy = updatedUser,
       )
       val updatedResponse = webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -514,9 +519,29 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should update subscription with comment and return 200`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        comment = "This is a comment",
+        updatedBy = updatedUser,
+      )
+      val updatedResponse = webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(updateSubscriptionRequest)
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<SubscriptionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(updatedResponse.comment).isEqualTo(updateSubscriptionRequest.comment)
+    }
+
+    @Test
     fun `should return 400 when trying to set end date before the start date`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = subscriptionResponse.startDate.minusDays(7),
+        updatedBy = updatedUser,
       )
 
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
@@ -531,10 +556,11 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     fun `should return 400 when trying to set start date after the end date`() {
       val updateEndDateRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now().plusDays(2),
+        updatedBy = updatedUser,
       )
       val updateStartDateRequest = UpdateSubscriptionRequest(
         startDate = LocalDate.now().plusDays(7),
-
+        updatedBy = updatedUser,
       )
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -567,6 +593,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = activeSubscription.startDate.minusDays(7),
+        updatedBy = updatedUser,
       )
 
       webTestClient.post().uri("/subscriptions/${activeSubscription.id}/update")
@@ -590,6 +617,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = LocalDate.now().minusDays(30),
+        updatedBy = updatedUser,
       )
 
       webTestClient.post().uri("/subscriptions/${activeSubscription.id}/update")
@@ -613,6 +641,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now().minusDays(7),
+        updatedBy = updatedUser,
       )
 
       webTestClient.post().uri("/subscriptions/${activeSubscription.id}/update")
@@ -628,7 +657,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `should return 400 when no fields to update provided`() {
-      val updateSubscriptionRequest = UpdateSubscriptionRequest()
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(updatedBy = updatedUser)
 
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
@@ -655,9 +684,26 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 400 when JSON does not have updated by`() {
+      webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .bodyValue(
+          """
+          { 
+          "comment": "comment text"
+          }
+          """.trimIndent(),
+        )
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+    }
+
+    @Test
     fun `should return 401 when unauthorised`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now(),
+        updatedBy = updatedUser,
       )
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .bodyValue(updateSubscriptionRequest)
@@ -671,6 +717,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     fun `should return 403 forbidden when user does not have the correct role`(role: String) {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now(),
+        updatedBy = updatedUser,
       )
       webTestClient.post().uri("/subscriptions/${subscriptionResponse.id}/update")
         .headers(setAuthorisation(roles = listOf(role)))
@@ -684,6 +731,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     fun `should return 404 when subscription does not exist`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = LocalDate.now(),
+        updatedBy = updatedUser,
       )
       val invalidSubscriptionId = UUID.randomUUID()
 

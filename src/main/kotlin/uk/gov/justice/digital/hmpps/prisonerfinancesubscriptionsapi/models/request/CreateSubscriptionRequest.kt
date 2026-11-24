@@ -32,6 +32,8 @@ class CreateSubscriptionRequest(
   val prisonNumber: String,
   @field:Schema(description = "The sub-account that the subscription payment is debited from", example = "CASH", required = true)
   val subAccountRef: SubAccountRef,
+  @field:Schema(description = "A comment to provide more context on the subscription", example = "This is a magazine subscription", required = false)
+  val comment: String? = null,
 ) {
   fun toEntity(): SubscriptionEntity = SubscriptionEntity(
     legacyPaymentProfileId = legacyPaymentProfileId,
@@ -46,5 +48,6 @@ class CreateSubscriptionRequest(
     prisonId = prisonId,
     prisonNumber = prisonNumber,
     subAccountRef = subAccountRef,
+    comment = comment,
   )
 }

@@ -47,7 +47,8 @@ class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepo
 
     val updatedStartDate = updateSubscriptionRequest.startDate ?: subscriptionEntity.startDate
     val updatedEndDate = updateSubscriptionRequest.endDate ?: subscriptionEntity.endDate
-    val entityCopy = subscriptionEntity.copy(startDate = updatedStartDate, endDate = updatedEndDate)
+    val updatedComment = updateSubscriptionRequest.comment ?: subscriptionEntity.comment
+    val entityCopy = subscriptionEntity.copy(startDate = updatedStartDate, endDate = updatedEndDate, comment = updatedComment, updatedBy = updateSubscriptionRequest.updatedBy)
 
     val endDateIsBeingUpdated = entityCopy.endDate != null
     if (endDateIsBeingUpdated && entityCopy.endDate!!.isBefore(entityCopy.startDate)) {

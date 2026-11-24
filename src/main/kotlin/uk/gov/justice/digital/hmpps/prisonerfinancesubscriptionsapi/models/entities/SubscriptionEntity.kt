@@ -81,6 +81,13 @@ data class SubscriptionEntity(
   @Enumerated(EnumType.STRING)
   @Column(name = "sub_account_ref", nullable = false, unique = false)
   val subAccountRef: SubAccountRef,
+
+  @Column(name = "comment", nullable = true, unique = false)
+  val comment: String? = null,
+
+  @Column(name = "updated_by", nullable = true, unique = false)
+  val updatedBy: String? = null,
+
 ) {
   val hasStarted: Boolean
     get() = startDate < LocalDate.now()

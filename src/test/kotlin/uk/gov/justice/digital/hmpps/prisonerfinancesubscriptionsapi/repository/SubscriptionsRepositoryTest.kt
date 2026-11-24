@@ -50,6 +50,7 @@ class SubscriptionsRepositoryTest @Autowired constructor(
       prisonId = "LEI",
       prisonNumber = prisonNumber,
       subAccountRef = SubAccountRef.CASH,
+      comment = "This is a comment",
     )
     subscriptionsRepository.save(subscription)
     return subscription

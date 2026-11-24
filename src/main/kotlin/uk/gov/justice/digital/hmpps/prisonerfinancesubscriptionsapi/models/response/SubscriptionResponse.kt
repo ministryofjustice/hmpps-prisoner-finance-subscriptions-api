@@ -35,6 +35,10 @@ data class SubscriptionResponse(
   val prisonNumber: String,
   @field:Schema(description = "The sub-account that the subscription payment is debited from", example = "CASH")
   val subAccountRef: SubAccountRef,
+  @field:Schema(description = "A comment to provide more context on the subscription", example = "This is a magazine subscription", required = false)
+  val comment: String? = null,
+  @field:Schema(description = "The user that last updated the record", example = "UPDATED_USER")
+  val updatedBy: String? = null,
 ) {
   companion object {
     fun fromEntity(subscriptionEntity: SubscriptionEntity): SubscriptionResponse = SubscriptionResponse(
@@ -51,6 +55,8 @@ data class SubscriptionResponse(
       prisonId = subscriptionEntity.prisonId,
       prisonNumber = subscriptionEntity.prisonNumber,
       subAccountRef = subscriptionEntity.subAccountRef,
+      comment = subscriptionEntity.comment,
+      updatedBy = subscriptionEntity.updatedBy,
     )
   }
 }

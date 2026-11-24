@@ -61,6 +61,7 @@ class SubscriptionServiceTest {
       prisonId = "LEI",
       prisonNumber = "AD12345",
       subAccountRef = SubAccountRef.CASH,
+      comment = "Test comment",
     )
 
     val idempotency = IdempotencyEntity(UUID.randomUUID(), createSubscriptionRequest.toEntity())
@@ -101,6 +102,7 @@ class SubscriptionServiceTest {
       assertThat(result.prisonId).isEqualTo(createSubscriptionRequest.prisonId)
       assertThat(result.prisonNumber).isEqualTo(createSubscriptionRequest.prisonNumber)
       assertThat(result.subAccountRef).isEqualTo(createSubscriptionRequest.subAccountRef)
+      assertThat(result.comment).isEqualTo(createSubscriptionRequest.comment)
     }
 
     @Test
@@ -120,6 +122,7 @@ class SubscriptionServiceTest {
         prisonId = "LEI",
         prisonNumber = "AD12345",
         subAccountRef = SubAccountRef.CASH,
+        comment = "This is a television subscription",
       )
 
       val errorResponse = assertThrows<CustomException> {
@@ -151,6 +154,7 @@ class SubscriptionServiceTest {
         prisonId = "",
         prisonNumber = prisonerNumber,
         subAccountRef = SubAccountRef.CASH,
+        comment = "This is a television subscription",
       )
 
       whenever { subscriptionsRepository.findByPrisonNumber(prisonerNumber) }.thenReturn(
@@ -169,11 +173,13 @@ class SubscriptionServiceTest {
 
     val subscriptionId: UUID = UUID.randomUUID()
     val updatedEndDate: LocalDate = LocalDate.now()
+    val updatedUser = "UPDATED_USER"
 
     @Test
     fun `should return subscription entity once end date updated successfully`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = updatedEndDate,
+        updatedBy = updatedUser,
       )
 
       val startDate = LocalDate.now()
@@ -208,6 +214,7 @@ class SubscriptionServiceTest {
     fun `should return subscription entity once start date updated successfully`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = LocalDate.now(),
+        updatedBy = updatedUser,
       )
 
       val subscriptionEntity = SubscriptionEntity(
@@ -238,10 +245,12 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    fun `should return subscription entity once start date and end date updated successfully`() {
+    fun `should return subscription entity once all fields are updated successfully`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = LocalDate.now(),
         endDate = LocalDate.now().plusDays(10),
+        comment = "This is a television subscription",
+        updatedBy = updatedUser,
       )
 
       val subscriptionEntity = SubscriptionEntity(
@@ -269,12 +278,48 @@ class SubscriptionServiceTest {
 
       assertThat(response.startDate).isEqualTo(updateSubscriptionRequest.startDate)
       assertThat(response.endDate).isEqualTo(updateSubscriptionRequest.endDate)
+      assertThat(response.comment).isEqualTo(updateSubscriptionRequest.comment)
+    }
+
+    @Test
+    fun `should update updatedBy user in subscription entity once updated successfully`() {
+      val updateSubscriptionRequest = UpdateSubscriptionRequest(
+        endDate = updatedEndDate,
+        updatedBy = updatedUser,
+      )
+
+      val subscriptionEntity = SubscriptionEntity(
+        subscriptionId = subscriptionId,
+        legacyPaymentProfileId = 1234,
+        amount = 50,
+        paymentSchedule = SubscriptionPaymentSchedule.MONDAY,
+        startDate = LocalDate.now(),
+        endDate = null,
+        subscriptionType = "",
+        reference = "",
+        createdBy = "",
+        createdAt = Instant.now(),
+        prisonId = "LEI",
+        prisonNumber = "A1234BC",
+        subAccountRef = SubAccountRef.CASH,
+      )
+
+      whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }.thenReturn(subscriptionEntity)
+
+      whenever { subscriptionsRepository.save(any<SubscriptionEntity>()) }
+        .thenAnswer { it.arguments[0] }
+
+      val response = subscriptionService.updateSubscription(subscriptionId, updateSubscriptionRequest)
+
+      assertThat(response.endDate).isEqualTo(updatedEndDate)
+      assertThat(response.updatedBy).isEqualTo(updatedUser)
     }
 
     @Test
     fun `should throw exception if subscription does not exist`() {
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = updatedEndDate,
+        updatedBy = updatedUser,
       )
 
       whenever { subscriptionsRepository.getSubscriptionEntityBySubscriptionId(subscriptionId) }
@@ -312,6 +357,7 @@ class SubscriptionServiceTest {
 
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         endDate = endDateInThePast,
+        updatedBy = updatedUser,
       )
 
       val errorResponse = assertThrows<CustomException> {
@@ -347,6 +393,7 @@ class SubscriptionServiceTest {
 
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = startDateInTheFuture,
+        updatedBy = updatedUser,
       )
 
       val errorResponse = assertThrows<CustomException> {
@@ -381,6 +428,7 @@ class SubscriptionServiceTest {
       val nextWeek = yesterday.plusWeeks(1)
       val updateSubscriptionRequest = UpdateSubscriptionRequest(
         startDate = nextWeek,
+        updatedBy = updatedUser,
       )
 
       val errorResponse = assertThrows<CustomException> {
