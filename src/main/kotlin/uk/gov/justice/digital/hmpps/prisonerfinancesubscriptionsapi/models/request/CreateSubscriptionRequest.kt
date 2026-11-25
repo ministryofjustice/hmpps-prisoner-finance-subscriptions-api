@@ -1,12 +1,14 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import org.springframework.validation.annotation.Validated
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubAccountRef
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.entities.SubscriptionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancesubscriptionsapi.models.enums.SubscriptionPaymentSchedule
 import java.time.Instant
 import java.time.LocalDate
 
+@Validated
 class CreateSubscriptionRequest(
   @field:Schema(description = "The legacy payment profile ID", example = "123456789", required = false)
   val legacyPaymentProfileId: Long? = null,

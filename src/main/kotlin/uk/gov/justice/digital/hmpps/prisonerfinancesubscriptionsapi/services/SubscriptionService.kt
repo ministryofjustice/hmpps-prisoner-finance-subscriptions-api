@@ -23,8 +23,10 @@ import java.util.UUID
 class SubscriptionService(private val subscriptionsRepository: SubscriptionsRepository, private val idempotencyRepository: IdempotencyKeyDataRepository) {
   @Transactional(rollbackOn = [Exception::class, Error::class])
   fun createSubscription(createSubscriptionRequest: CreateSubscriptionRequest, idempotencyKey: UUID): SubscriptionResponse {
-    if (createSubscriptionRequest.endDate != null && createSubscriptionRequest.endDate < createSubscriptionRequest.startDate) {
-      throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
+    createSubscriptionRequest.endDate?.let { endDate ->
+      if (endDate < createSubscriptionRequest.startDate) {
+        throw CustomException("Subscription end date before start date", HttpStatus.BAD_REQUEST)
+      }
     }
 
     val createdSubscription = subscriptionsRepository.saveAndFlush(createSubscriptionRequest.toEntity())
