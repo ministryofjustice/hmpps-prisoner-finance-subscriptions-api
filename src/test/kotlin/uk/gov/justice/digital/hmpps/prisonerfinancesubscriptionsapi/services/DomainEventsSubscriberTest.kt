@@ -86,7 +86,7 @@ class DomainEventsSubscriberTest {
   }
 
   @Test
-  fun `should call advances service when merge event is sent`() {
+  fun `should call subscriptions service when merge event is sent`() {
     val removedPrisonNumber = "A1234BC"
     val survivedPrisonNumber = "Z9874EF"
 

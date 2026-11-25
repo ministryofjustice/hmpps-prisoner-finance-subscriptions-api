@@ -577,7 +577,7 @@ class SubscriptionServiceTest {
     private val mergedPrisonNumber = "X999ZX"
 
     @Test
-    fun `should merge holds by prisonNumber`() {
+    fun `should merge subscriptions by prisonNumber`() {
       val mockSubscriptions = listOf(
         SubscriptionEntity(
           legacyPaymentProfileId = 123,
