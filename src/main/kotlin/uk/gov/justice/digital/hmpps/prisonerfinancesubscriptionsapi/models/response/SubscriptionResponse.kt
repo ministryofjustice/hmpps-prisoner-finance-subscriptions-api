@@ -19,7 +19,7 @@ data class SubscriptionResponse(
   val paymentSchedule: SubscriptionPaymentSchedule,
   @field:Schema(description = "The start date of the subscription", example = "2026-12-03")
   val startDate: LocalDate,
-  @field:Schema(description = "The end date of the subscription", example = "2026-13-04")
+  @field:Schema(description = "The end date of the subscription", example = "2026-11-04")
   val endDate: LocalDate? = null,
   @field:Schema(description = "The transaction type on the payment profile", example = "TELE")
   val subscriptionType: String,

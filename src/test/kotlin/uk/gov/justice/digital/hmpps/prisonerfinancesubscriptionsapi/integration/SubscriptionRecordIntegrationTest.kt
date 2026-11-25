@@ -208,7 +208,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       val idempotencyKey = UUID.randomUUID()
       val response = webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
-        .headers(IntegrationTestHelpers.setIdempotencyKey(idempotencyKey))
+        .headers(setIdempotencyKey(idempotencyKey))
         .bodyValue(createSubscriptionRequestWithoutLegacyPaymentProfileId)
         .exchange()
         .expectStatus()
@@ -252,29 +252,62 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 if given a malformed request body`() {
-      // Incorrect data types on keys
+    fun `should return 400 if given a well formed request body`() {
+      // invalid ENUM
       webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .header("Content-Type", "application/json")
         .bodyValue(
-          "{\n" +
-            "  \"legacyPaymentProfileId\": \"123456789\",\n" +
-            "  \"amount\": \"50\",\n" +
-            "  \"dayOfPayment\": 1,\n" +
-            "  \"startDate\": 20261203,\n" +
-            "  \"endDate\": false,\n" +
-            "  \"subscriptionType\": 1001,\n" +
-            "  \"reference\": 999.99,\n" +
-            "  \"createdBy\": {\n" +
-            "    \"username\": \"TEST_USER\"\n" +
-            "  },\n" +
-            "  \"createdAt\": 1688212800,\n" +
-            "  \"prisonId\": true,\n" +
-            "  \"prisonNumber\": 12345,\n" +
-            "  \"subAccountRef\": [\"CASH\"]\n" +
-            "}",
+          """
+            {
+              "legacyPaymentProfileId": 12345111189,
+              "amount": 50,
+              "paymentSchedule": "MONDAY_TO_FRIDAY // BAD REQ",
+              "startDate": "2026-12-03",
+              "endDate": "2026-12-04",
+              "subscriptionType": "TELE",
+              "reference": "sky tv",
+              "createdBy": "TEST_USER",
+              "createdAt": "2023-07-01T12:00:00Z",
+              "prisonId": "LEI",
+              "prisonNumber": "A1685EE",
+              "subAccountRef": "CASH",
+              "comment": "This is a magazine subscription"
+            }
+          """.trimIndent(),
         )
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+
+      // invalid date
+      webTestClient.post().uri("/subscriptions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
+        .header("Content-Type", "application/json")
+        .bodyValue(
+          """
+            {
+              "legacyPaymentProfileId": 12345111189,
+              "amount": 50,
+              "paymentSchedule": "MONDAY_TO_FRIDAY // BAD REQ",
+              "startDate": "2026-13-03",
+              "endDate": "2026-12-04",
+              "subscriptionType": "TELE",
+              "reference": "sky tv",
+              "createdBy": "TEST_USER",
+              "createdAt": "2023-07-01T12:00:00Z",
+              "prisonId": "LEI",
+              "prisonNumber": "A1685EE",
+              "subAccountRef": "CASH",
+              "comment": "This is a magazine subscription"
+            }
+          """.trimIndent(),
+        )
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus()
         .isBadRequest
@@ -287,6 +320,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .header("Content-Type", "application/json")
         .bodyValue("{ \"key\": \"value\" }")
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus()
         .isBadRequest
@@ -298,6 +332,7 @@ class SubscriptionRecordIntegrationTest : IntegrationTestBase() {
       webTestClient.post().uri("/subscriptions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__SUBSCRIPTIONS__RW)))
         .bodyValue(mapper.writeValueAsString(mapOf("key" to "value")))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus()
         .isBadRequest
